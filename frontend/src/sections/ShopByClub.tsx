@@ -1,12 +1,15 @@
-// src/sections/ShopByClub.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /* ---------------- Types ---------------- */
-type Team = { name: string; slug: string; logo?: string };
-type ShopByClubProps = { teams?: Team[] };
+export type Team = { name: string; slug: string; logo?: string };
 
-/* ---------------- Defaults (swap to local assets when ready) ---------------- */
+type ShopByClubProps = {
+  teams?: Team[];
+  onSelect?: (team: Team) => void; // ← exposed so Home can pass it
+};
+
+/* ---------------- Defaults ---------------- */
 const TEAMS_DEFAULT: Team[] = [
   { name: "Real Madrid", slug: "real-madrid", logo: "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg" },
   { name: "FC Barcelona", slug: "barcelona", logo: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" },
@@ -22,57 +25,65 @@ const TEAMS_DEFAULT: Team[] = [
   { name: "Al Nassr", slug: "al-nassr", logo: "https://upload.wikimedia.org/wikipedia/en/1/15/Al_Nassr_FC_Logo.svg" },
 ];
 
-/* ---------------- Athletic color accents (cycled) ---------------- */
+/* ---------------- Colors ---------------- */
 const ACCENTS: Array<[string, string]> = [
-  ["#ff3b3b", "#ffb800"], // red → yellow
-  ["#4f46e5", "#22d3ee"], // indigo → cyan
-  ["#16a34a", "#a3e635"], // green → lime
-  ["#f97316", "#f43f5e"], // orange → rose
-  ["#06b6d4", "#3b82f6"], // cyan → blue
+  ["#ff3b3b", "#ffb800"],
+  ["#4f46e5", "#22d3ee"],
+  ["#16a34a", "#a3e635"],
+  ["#f97316", "#f43f5e"],
+  ["#06b6d4", "#3b82f6"],
 ];
 
 /* ---------------- Helpers ---------------- */
-// Keep only teams that declare a non-empty logo URL
 function sanitizeTeams(list: Team[]) {
   return list.filter((t) => typeof t.logo === "string" && t.logo.trim().length > 0);
 }
 
-/* ---------------- ClubCard (self-removes if logo fails) ---------------- */
+/* ---------------- ClubCard ---------------- */
 function ClubCard({
   team,
   from,
   to,
   sizePx,
   radiusPx,
+  onSelect,
 }: {
   team: Team;
   from: string;
   to: string;
   sizePx: number;
   radiusPx: number;
+  onSelect?: (team: Team) => void;
 }) {
   const [ok, setOk] = useState(true);
   if (!ok) return null;
 
+  const handleClick = () => onSelect?.(team);
+
   return (
     <div
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleClick()}
       className={[
         "group relative shrink-0 snap-start",
         "rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur",
         "transition-all duration-300 ease-[cubic-bezier(.22,.61,.36,1)]",
         "hover:bg-white/[0.07] hover:border-white/20",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+        "cursor-pointer",
       ].join(" ")}
       style={{ width: sizePx, borderRadius: radiusPx }}
     >
-      {/* Animated athletic rim */}
+      {/* Animated rim */}
       <div
         aria-hidden
         className="absolute inset-0 rounded-[inherit] pointer-events-none"
         style={{
           padding: 2,
           background: `conic-gradient(from 0deg, ${from}, ${to}, ${from})`,
-          WebkitMask:
-            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+          WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
           animation: "spin 7s linear infinite",
@@ -90,13 +101,12 @@ function ClubCard({
             "radial-gradient(110% 85% at 50% 65%, rgba(255,255,255,0.10), rgba(255,255,255,0) 70%), #0a0a0a",
         }}
       >
-        {/* subtle athletic highlight */}
+        {/* highlight */}
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
-            background:
-              "linear-gradient(-20deg, rgba(255,255,255,0.08), rgba(255,255,255,0) 35%)",
+            background: "linear-gradient(-20deg, rgba(255,255,255,0.08), rgba(255,255,255,0) 35%)",
             mixBlendMode: "screen",
           }}
         />
@@ -113,34 +123,6 @@ function ClubCard({
           />
         </div>
 
-        {/* Single hover CTA (UI only / disabled) */}
-        <div
-          className={[
-            "pointer-events-none absolute inset-0 grid place-items-center",
-            "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-            "bg-gradient-to-t from-black/65 via-black/30 to-transparent",
-          ].join(" ")}
-        >
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            className={[
-              "pointer-events-auto inline-flex items-center justify-center",
-              "rounded-full px-5 py-2.5 text-sm font-semibold",
-              "text-black shadow-xl ring-1 ring-black/5 backdrop-blur",
-              "cursor-not-allowed",
-            ].join(" ")}
-            style={{
-              background: `linear-gradient(90deg, ${from}, ${to})`,
-            }}
-            title="(coming soon)"
-            onClick={(e) => e.preventDefault()}
-          >
-            View Club Kits
-          </button>
-        </div>
-
         {/* inner ring */}
         <span className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/10" />
       </div>
@@ -148,7 +130,7 @@ function ClubCard({
   );
 }
 
-/* ---------------- Edge buttons (used) ---------------- */
+/* ---------------- Edge button ---------------- */
 function EdgeBtn({
   children, onClick, ariaLabel, hidden,
 }: { children: React.ReactNode; onClick: () => void; ariaLabel: string; hidden?: boolean }) {
@@ -170,21 +152,13 @@ function EdgeBtn({
 }
 
 /* ---------------- Main Section ---------------- */
-export default function ShopByClub({ teams = TEAMS_DEFAULT }: ShopByClubProps) {
+export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByClubProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
 
-  // exact SAME size for every card at all breakpoints
   const CARD = useMemo(() => ({ size: 360, radius: 30 }), []);
-
-  // hide scrollbar (FF/IE) via styles; Tailwind class handles WebKit
-  const hideScrollbarStyle: React.CSSProperties = {
-    msOverflowStyle: "none",
-    scrollbarWidth: "none",
-  };
-
-  // sanitize incoming teams (no empty logos)
+  const hideScrollbarStyle: React.CSSProperties = { msOverflowStyle: "none", scrollbarWidth: "none" };
   const cleanTeams = useMemo(() => sanitizeTeams(teams), [teams]);
 
   const updateEdges = () => {
@@ -220,7 +194,7 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT }: ShopByClubProps) {
     };
   }, []);
 
-  // drag-to-scroll (pointer events)
+  // drag-to-scroll
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
@@ -263,46 +237,29 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT }: ShopByClubProps) {
   };
 
   return (
-    <section
-      aria-label="Popular Teams"
-      className="relative border-t border-white/10 bg-neutral-950"
-    >
-      {/* Athletic live background: diagonal speed stripes + soft gradient wash */}
+    <section aria-label="Popular Teams" className="relative border-t border-white/10 bg-neutral-950">
+      {/* background */}
       <div
         aria-hidden
         className="absolute inset-0 -z-10"
         style={{
           background:
-            "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,.65) 100%), \
-             repeating-linear-gradient(-24deg, rgba(255,255,255,0.05) 0 10px, rgba(255,255,255,0) 10px 28px)",
-          maskImage:
-            "radial-gradient(120% 85% at 50% 15%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
+            "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,.65) 100%), repeating-linear-gradient(-24deg, rgba(255,255,255,0.05) 0 10px, rgba(255,255,255,0) 10px 28px)",
+          maskImage: "radial-gradient(120% 85% at 50% 15%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
         }}
       />
 
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
         <div className="relative mt-5">
           {/* gradient edges */}
-          <div
-            className={`pointer-events-none absolute inset-y-0 left-0 w-28 z-10 transition-opacity ${
-              canPrev ? "opacity-100" : "opacity-0"
-            } bg-gradient-to-r from-neutral-950 to-transparent`}
-          />
-          <div
-            className={`pointer-events-none absolute inset-y-0 right-0 w-28 z-10 transition-opacity ${
-              canNext ? "opacity-100" : "opacity-0"
-            } bg-gradient-to-l from-neutral-950 to-transparent`}
-          />
+          <div className={`pointer-events-none absolute inset-y-0 left-0 w-28 z-10 transition-opacity ${canPrev ? "opacity-100" : "opacity-0"} bg-gradient-to-r from-neutral-950 to-transparent`} />
+          <div className={`pointer-events-none absolute inset-y-0 right-0 w-28 z-10 transition-opacity ${canNext ? "opacity-100" : "opacity-0"} bg-gradient-to-l from-neutral-950 to-transparent`} />
 
           {/* Track */}
           <div
             ref={trackRef}
             tabIndex={0}
-            className={[
-              "flex gap-6 overflow-x-auto snap-x scroll-px-8 outline-none select-none",
-              "cursor-grab",
-              "scrollbar-none",
-            ].join(" ")}
+            className={["flex gap-6 overflow-x-auto snap-x scroll-px-8 outline-none select-none", "cursor-grab", "scrollbar-none"].join(" ")}
             style={{ ...hideScrollbarStyle, scrollBehavior: "smooth" }}
             onKeyDown={(e) => {
               if (e.key === "ArrowRight") scrollByAmount("right");
@@ -319,6 +276,7 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT }: ShopByClubProps) {
                   to={to}
                   sizePx={CARD.size}
                   radiusPx={CARD.radius}
+                  onSelect={onSelect}
                 />
               );
             })}
@@ -340,10 +298,8 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT }: ShopByClubProps) {
         </div>
       </div>
 
-      {/* WebKit scrollbar hide (fallback if you don't use a plugin) */}
-      <style>{`
-        .scrollbar-none::-webkit-scrollbar { display: none; }
-      `}</style>
+      {/* WebKit scrollbar hide */}
+      <style>{`.scrollbar-none::-webkit-scrollbar { display: none; }`}</style>
     </section>
   );
 }

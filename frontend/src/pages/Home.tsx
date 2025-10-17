@@ -1,4 +1,3 @@
-// src/pages/Home.tsx
 import React, { useCallback, useEffect, useState } from "react";
 import Header from "../components/Header";
 import { Instagram, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react";
@@ -8,7 +7,7 @@ import OldiesGoldies from "../sections/OldiesGoldies";
 import FeaturedCollection from "../sections/FeaturedCollection";
 import ScrollEffects from "../components/ScrollEffects";
 import ShopByCategory from "../sections/ShopByCategory";
-import ShopByClub from "../sections/ShopByClub";
+import ShopByClub, { type Team as ClubTeam } from "../sections/ShopByClub"; // ← type-only import
 
 // Background + hero playlist assets
 import bg from "../assets/pexels-eslames1-31160056.jpg";
@@ -18,9 +17,6 @@ import heroVideo3 from "../assets/homePageVideo3.mp4";
 import kaizenLogo from "../assets/kaizen-logo.png";
 
 const HERO_VIDEOS: string[] = [heroVideo1, heroVideo2, heroVideo3];
-
-// Minimal Team type for the onSelect callback
-type Team = { slug: string; name?: string; [k: string]: unknown };
 
 export default function Home() {
   const api = import.meta.env.VITE_API_URL as string | undefined;
@@ -93,15 +89,15 @@ export default function Home() {
 
       <ShopByCategory />
 
-      {/* ============ FEATURED (component only) ============ */}
+      {/* ============ FEATURED ============ */}
       <FeaturedCollection />
 
-      {/* ============ OLDIES BUT GOLDIES (component only) ============ */}
+      {/* ============ OLDIES BUT GOLDIES ============ */}
       <OldiesGoldies />
 
-      {/* ============ SHOP BY CLUB / POPULAR TEAMS ============ */}
+      {/* ============ SHOP BY CLUB ============ */}
       <ShopByClub
-        onSelect={(team: Team) => {
+        onSelect={(team: ClubTeam) => {
           const url = new URL(window.location.href);
           url.searchParams.set("club", team.slug);
           window.history.pushState({}, "", url);
@@ -183,21 +179,11 @@ export default function Home() {
           <div className="mt-8 border-t border-white/10 pt-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
             <p className="text-xs text-white/50">© {new Date().getFullYear()} KAIZEN. All rights reserved.</p>
             <div className="flex items-center gap-4 text-xs">
-              <a href="/privacy" className="text-white/60 hover:text-white transition">
-                Privacy
-              </a>
-              <span className="text-white/20" aria-hidden>
-                •
-              </span>
-              <a href="/terms" className="text-white/60 hover:text-white transition">
-                Terms
-              </a>
-              <span className="text-white/20" aria-hidden>
-                •
-              </span>
-              <a href="/support" className="text-white/60 hover:text-white transition">
-                Support
-              </a>
+              <a href="/privacy" className="text-white/60 hover:text-white transition">Privacy</a>
+              <span className="text-white/20" aria-hidden>•</span>
+              <a href="/terms" className="text-white/60 hover:text-white transition">Terms</a>
+              <span className="text-white/20" aria-hidden>•</span>
+              <a href="/support" className="text-white/60 hover:text-white transition">Support</a>
             </div>
           </div>
         </div>
@@ -207,16 +193,9 @@ export default function Home() {
 }
 
 /* -------------------- Shared bits -------------------- */
-
 function TrustItem({
-  icon,
-  title,
-  note,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  note: string;
-}) {
+  icon, title, note,
+}: { icon: React.ReactNode; title: string; note: string }) {
   return (
     <div
       className={[
@@ -239,7 +218,6 @@ function TrustItem({
       >
         {icon}
       </span>
-
       <div className="min-w-0 leading-tight">
         <div className="text-[12.5px] md:text-[13px] font-semibold tracking-tight">{title}</div>
         <div className="text-[11px] text-white/70 truncate">{note}</div>
@@ -249,21 +227,11 @@ function TrustItem({
 }
 
 /* =================== Hero Playlist =================== */
-
-type ResizeObserverLike = {
-  observe: (el: Element) => void;
-  disconnect: () => void;
-};
+type ResizeObserverLike = { observe: (el: Element) => void; disconnect: () => void; };
 
 function HeroPlaylist({
-  videos,
-  poster,
-  badge,
-}: {
-  videos: string[];
-  poster?: string;
-  badge?: string;
-}) {
+  videos, poster, badge,
+}: { videos: string[]; poster?: string; badge?: string }) {
   const DURATION = 520;
   const [idx, setIdx] = useState(0);
   const total = videos.length;
@@ -277,7 +245,7 @@ function HeroPlaylist({
   const [containerW, setContainerW] = useState<number>(0);
 
   useEffect(() => {
-    const el = containerRef.current as HTMLDivElement | null; // explicit type
+    const el = containerRef.current as HTMLDivElement | null;
     if (!el) return;
 
     const measure = () => setContainerW(el.clientWidth);
@@ -285,18 +253,19 @@ function HeroPlaylist({
 
     let ro: ResizeObserverLike | null = null;
     if (typeof window !== "undefined" && "ResizeObserver" in window) {
-      const RO = (window as unknown as {
-        ResizeObserver: new (cb: ResizeObserverCallback) => ResizeObserverLike;
-      }).ResizeObserver;
+      const RO = (window as unknown as { ResizeObserver: new (cb: ResizeObserverCallback) => ResizeObserverLike }).ResizeObserver;
       ro = new RO(() => measure());
       ro.observe(el);
-    } else {
-      window.addEventListener("resize", measure);
+    } else if (typeof globalThis !== "undefined" && typeof (globalThis ).addEventListener === "function") {
+      // fallback (avoid TS narrowing issue)
+      (globalThis ).addEventListener("resize", measure);
     }
 
     return () => {
       ro?.disconnect();
-      window.removeEventListener("resize", measure);
+      if (typeof globalThis !== "undefined" && typeof (globalThis).removeEventListener === "function") {
+        (globalThis ).removeEventListener("resize", measure);
+      }
     };
   }, []);
 
@@ -338,24 +307,14 @@ function HeroPlaylist({
     if (p && typeof p.then === "function") p.catch(() => {});
   }, [idx]);
 
-  const onEnded = () => {
-    if (!animating) next();
-  };
-
-  // Keyboard navigation with safe typing (fixes TS2339 and eslint deps)
   useEffect(() => {
     const el = containerRef.current as HTMLDivElement | null;
     if (!el) return;
 
     const onKey: EventListener = (e) => {
       const ke = e as KeyboardEvent;
-      if (ke.key === "ArrowRight") {
-        ke.preventDefault();
-        next();
-      } else if (ke.key === "ArrowLeft") {
-        ke.preventDefault();
-        prev();
-      }
+      if (ke.key === "ArrowRight") { ke.preventDefault(); next(); }
+      else if (ke.key === "ArrowLeft") { ke.preventDefault(); prev(); }
     };
 
     el.addEventListener("keydown", onKey);
@@ -408,12 +367,7 @@ function HeroPlaylist({
           <video
             key={`prev-${videos[prevIdx]}`}
             className="w-full h-full aspect-[16/9] object-cover block"
-            autoPlay
-            muted
-            playsInline
-            controls={false}
-            preload="metadata"
-            poster={poster}
+            autoPlay muted playsInline controls={false} preload="metadata" poster={poster}
           >
             <source src={videos[prevIdx]} type="video/mp4" />
           </video>
@@ -423,14 +377,8 @@ function HeroPlaylist({
             key={`current-${videos[idx]}`}
             ref={currentRef}
             className="w-full h-full aspect-[16/9] object-cover block"
-            autoPlay
-            muted
-            loop={false}
-            playsInline
-            controls={false}
-            preload="metadata"
-            poster={poster}
-            onEnded={onEnded}
+            autoPlay muted loop={false} playsInline controls={false} preload="metadata" poster={poster}
+            onEnded={() => next()}
           >
             <source src={videos[idx]} type="video/mp4" />
           </video>
@@ -439,12 +387,7 @@ function HeroPlaylist({
           <video
             key={`next-${videos[(idx + 1) % total]}`}
             className="w-full h-full aspect-[16/9] object-cover block"
-            autoPlay
-            muted
-            playsInline
-            controls={false}
-            preload="metadata"
-            poster={poster}
+            autoPlay muted playsInline controls={false} preload="metadata" poster={poster}
           >
             <source src={videos[(idx + 1) % total]} type="video/mp4" />
           </video>
@@ -455,24 +398,16 @@ function HeroPlaylist({
       <div className="pointer-events-none absolute inset-y-0 right-0 w-20 z-20 bg-gradient-to-l from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       <div className="absolute inset-0 z-30 flex items-center justify-between px-2">
-        <HeroNavButton label="Previous" icon={<ChevronLeft size={18} />} onClick={prev} side="left" />
-        <HeroNavButton label="Next" icon={<ChevronRight size={18} />} onClick={next} side="right" />
+        <HeroNavButton label="Previous" icon={<ChevronLeft size={18} />} onClick={() => prev()} side="left" />
+        <HeroNavButton label="Next" icon={<ChevronRight size={18} />} onClick={() => next()} side="right" />
       </div>
     </div>
   );
 }
 
 function HeroNavButton({
-  label,
-  icon,
-  onClick,
-  side,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  side: "left" | "right";
-}) {
+  label, icon, onClick, side,
+}: { label: string; icon: React.ReactNode; onClick: () => void; side: "left" | "right" }) {
   return (
     <div
       className={[

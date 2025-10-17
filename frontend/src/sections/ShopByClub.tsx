@@ -148,28 +148,7 @@ function ClubCard({
   );
 }
 
-/* ---------------- Edge & Nav buttons ---------------- */
-function NavBtn({
-  children, onClick, disabled, label,
-}: { children: React.ReactNode; onClick: () => void; disabled?: boolean; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className={[
-        "inline-flex items-center justify-center h-11 w-11 rounded-full",
-        "bg-white/90 text-black shadow-lg ring-1 ring-black/5 backdrop-blur",
-        "transition-all duration-200 hover:scale-105 hover:shadow-xl hover:ring-black/10 active:scale-95",
-        "disabled:opacity-30 disabled:cursor-not-allowed",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-}
-
+/* ---------------- Edge buttons (used) ---------------- */
 function EdgeBtn({
   children, onClick, ariaLabel, hidden,
 }: { children: React.ReactNode; onClick: () => void; ariaLabel: string; hidden?: boolean }) {
@@ -302,8 +281,6 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT }: ShopByClubProps) {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-      
-
         <div className="relative mt-5">
           {/* gradient edges */}
           <div
@@ -324,7 +301,7 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT }: ShopByClubProps) {
             className={[
               "flex gap-6 overflow-x-auto snap-x scroll-px-8 outline-none select-none",
               "cursor-grab",
-              "scrollbar-none", // Tailwind plugin; add CSS below for WebKit fallback if needed
+              "scrollbar-none",
             ].join(" ")}
             style={{ ...hideScrollbarStyle, scrollBehavior: "smooth" }}
             onKeyDown={(e) => {

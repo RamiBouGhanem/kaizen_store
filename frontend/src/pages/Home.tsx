@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Header from "../components/Header";
 import { Instagram, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react";
 import { ChevronRight, ChevronLeft, ShieldCheck, Truck, RefreshCw } from "lucide-react";
@@ -10,7 +10,6 @@ import ScrollEffects from "../components/ScrollEffects";
 import ShopByCategory from "../sections/ShopByCategory";
 import ShopByClub from "../sections/ShopByClub";
 
-
 // Background + hero playlist assets
 import bg from "../assets/pexels-eslames1-31160056.jpg";
 import heroVideo1 from "../assets/homePageVideo1.mp4";
@@ -19,6 +18,9 @@ import heroVideo3 from "../assets/homePageVideo3.mp4";
 import kaizenLogo from "../assets/kaizen-logo.png";
 
 const HERO_VIDEOS: string[] = [heroVideo1, heroVideo2, heroVideo3];
+
+// Minimal Team type for the onSelect callback
+type Team = { slug: string; name?: string; [k: string]: unknown };
 
 export default function Home() {
   const api = import.meta.env.VITE_API_URL as string | undefined;
@@ -91,30 +93,21 @@ export default function Home() {
 
       <ShopByCategory />
 
-
       {/* ============ FEATURED (component only) ============ */}
       <FeaturedCollection />
 
       {/* ============ OLDIES BUT GOLDIES (component only) ============ */}
       <OldiesGoldies />
 
-  {/* ============ SHOP BY CLUB / POPULAR TEAMS ============ */}
-  <ShopByClub
-    // Optional: Override default teams or handle selection
-    // teams={[
-    //   { name: "Real Madrid", slug: "real-madrid", logo: realMadridPng },
-    //   ...
-    // ]}
-    onSelect={(team) => {
-      // If you already filter products on query string, you can skip this
-      const url = new URL(window.location.href);
-      url.searchParams.set("club", team.slug);
-      window.history.pushState({}, "", url);
-      // Notify any listeners (e.g., your product grid)
-      window.dispatchEvent(new CustomEvent("kaizen:club-selected", { detail: team }));
-    }}
-  />
-
+      {/* ============ SHOP BY CLUB / POPULAR TEAMS ============ */}
+      <ShopByClub
+        onSelect={(team: Team) => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("club", team.slug);
+          window.history.pushState({}, "", url);
+          window.dispatchEvent(new CustomEvent("kaizen:club-selected", { detail: team }));
+        }}
+      />
 
       {/* ===================== FOOTER ===================== */}
       <footer className="bg-neutral-950 border-t border-white/10">
@@ -165,12 +158,18 @@ export default function Home() {
               <h4 className="text-sm font-semibold text-white/90">Contact</h4>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
-                  <a href="mailto:support@kaizen.com" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition">
+                  <a
+                    href="mailto:support@kaizen.com"
+                    className="inline-flex items-center gap-2 text-white/80 hover:text-white transition"
+                  >
                     <Mail size={16} /> support@kaizen.com
                   </a>
                 </li>
                 <li>
-                  <a href="tel:+10000000000" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition">
+                  <a
+                    href="tel:+10000000000"
+                    className="inline-flex items-center gap-2 text-white/80 hover:text-white transition"
+                  >
                     <Phone size={16} /> +1 (000) 000-0000
                   </a>
                 </li>
@@ -184,11 +183,21 @@ export default function Home() {
           <div className="mt-8 border-t border-white/10 pt-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
             <p className="text-xs text-white/50">© {new Date().getFullYear()} KAIZEN. All rights reserved.</p>
             <div className="flex items-center gap-4 text-xs">
-              <a href="/privacy" className="text-white/60 hover:text-white transition">Privacy</a>
-              <span className="text-white/20" aria-hidden>•</span>
-              <a href="/terms" className="text-white/60 hover:text-white transition">Terms</a>
-              <span className="text-white/20" aria-hidden>•</span>
-              <a href="/support" className="text-white/60 hover:text-white transition">Support</a>
+              <a href="/privacy" className="text-white/60 hover:text-white transition">
+                Privacy
+              </a>
+              <span className="text-white/20" aria-hidden>
+                •
+              </span>
+              <a href="/terms" className="text-white/60 hover:text-white transition">
+                Terms
+              </a>
+              <span className="text-white/20" aria-hidden>
+                •
+              </span>
+              <a href="/support" className="text-white/60 hover:text-white transition">
+                Support
+              </a>
             </div>
           </div>
         </div>
@@ -232,9 +241,7 @@ function TrustItem({
       </span>
 
       <div className="min-w-0 leading-tight">
-        <div className="text-[12.5px] md:text-[13px] font-semibold tracking-tight">
-          {title}
-        </div>
+        <div className="text-[12.5px] md:text-[13px] font-semibold tracking-tight">{title}</div>
         <div className="text-[11px] text-white/70 truncate">{note}</div>
       </div>
     </div>
@@ -242,6 +249,11 @@ function TrustItem({
 }
 
 /* =================== Hero Playlist =================== */
+
+type ResizeObserverLike = {
+  observe: (el: Element) => void;
+  disconnect: () => void;
+};
 
 function HeroPlaylist({
   videos,
@@ -265,21 +277,25 @@ function HeroPlaylist({
   const [containerW, setContainerW] = useState<number>(0);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = containerRef.current as HTMLDivElement | null; // explicit type
     if (!el) return;
+
     const measure = () => setContainerW(el.clientWidth);
     measure();
 
-    let ro: ResizeObserver | null = null;
+    let ro: ResizeObserverLike | null = null;
     if (typeof window !== "undefined" && "ResizeObserver" in window) {
-      ro = new ResizeObserver(() => measure());
+      const RO = (window as unknown as {
+        ResizeObserver: new (cb: ResizeObserverCallback) => ResizeObserverLike;
+      }).ResizeObserver;
+      ro = new RO(() => measure());
       ro.observe(el);
     } else {
       window.addEventListener("resize", measure);
     }
 
     return () => {
-      ro?.disconnect?.();
+      ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
   }, []);
@@ -290,31 +306,29 @@ function HeroPlaylist({
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const prevIdx = (idx - 1 + total) % total;
-  const nextIdx = (idx + 1) % total;
 
   const snapWithoutTransition = (targetPct: number) => {
     setTransitionOn(false);
     setOffsetPct(targetPct);
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => setTransitionOn(true))
-    );
+    requestAnimationFrame(() => requestAnimationFrame(() => setTransitionOn(true)));
   };
 
-  const slide = (direction: "next" | "prev") => {
-    if (animating || total < 2) return;
-    setAnimating(true);
-    setOffsetPct(direction === "next" ? -200 : 0);
-    window.setTimeout(() => {
-      setIdx((i) =>
-        direction === "next" ? (i + 1) % total : (i - 1 + total) % total
-      );
-      snapWithoutTransition(-100);
-      setAnimating(false);
-    }, DURATION);
-  };
+  const slide = useCallback(
+    (direction: "next" | "prev") => {
+      if (animating || total < 2) return;
+      setAnimating(true);
+      setOffsetPct(direction === "next" ? -200 : 0);
+      window.setTimeout(() => {
+        setIdx((i) => (direction === "next" ? (i + 1) % total : (i - 1 + total) % total));
+        snapWithoutTransition(-100);
+        setAnimating(false);
+      }, DURATION);
+    },
+    [animating, total]
+  );
 
-  const next = () => slide("next");
-  const prev = () => slide("prev");
+  const next = useCallback(() => slide("next"), [slide]);
+  const prev = useCallback(() => slide("prev"), [slide]);
 
   useEffect(() => {
     const v = currentRef.current;
@@ -328,21 +342,25 @@ function HeroPlaylist({
     if (!animating) next();
   };
 
+  // Keyboard navigation with safe typing (fixes TS2339 and eslint deps)
   useEffect(() => {
-    const el = containerRef.current;
+    const el = containerRef.current as HTMLDivElement | null;
     if (!el) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
+
+    const onKey: EventListener = (e) => {
+      const ke = e as KeyboardEvent;
+      if (ke.key === "ArrowRight") {
+        ke.preventDefault();
         next();
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
+      } else if (ke.key === "ArrowLeft") {
+        ke.preventDefault();
         prev();
       }
     };
+
     el.addEventListener("keydown", onKey);
     return () => el.removeEventListener("keydown", onKey);
-  }, [animating, total]);
+  }, [next, prev]);
 
   if (reducedMotion || total === 0) {
     return (
@@ -487,87 +505,5 @@ function HeroNavButton({
         {label}
       </div>
     </div>
-  );
-}
-
-/* =================== Category Rail =================== */
-
-function CategoryRail() {
-  const cats = [
-    {
-      title: "Men",
-      note: "Performance essentials for every movement",
-      image:
-        "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&auto=format&fit=crop&w=1600",
-      href: "#featured",
-      badge: "Core",
-    },
-    {
-      title: "Women",
-      note: "Engineered for endurance and comfort",
-      image:
-        "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&auto=format&fit=crop&w=1600",
-      href: "#goldies",
-      badge: "New",
-    },
-    {
-      title: "Training",
-      note: "Strength · Conditioning · Mobility",
-      image:
-        "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&auto=format&fit=crop&w=1600",
-      href: "#goldies",
-      badge: "Pro",
-    },
-  ];
-
-  return (
-    <section className="relative h-[66vh] md:h-[72vh] w-full" aria-label="Shop by Category">
-      <div className="h-full w-full px-2 sm:px-4 md:px-6">
-        <div className="grid h-full grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          {cats.map((c) => (
-            <a
-              key={c.title}
-              href={c.href}
-              className={[
-                "group relative isolate overflow-hidden rounded-2xl h-[18rem] md:h-full",
-                "border border-white/12 bg-white/[0.04] backdrop-blur-sm",
-                "shadow-[0_10px_32px_rgba(0,0,0,0.35)]",
-                "transition-all duration-300 ease-[cubic-bezier(.22,.61,.36,1)]",
-                "hover:shadow-[0_16px_42px_rgba(0,0,0,0.45)] hover:border-white/20",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-              ].join(" ")}
-            >
-              <img
-                src={c.image}
-                alt={c.title}
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(.22,.61,.36,1)] group-hover:scale-[1.04]"
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
-              <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(70%_55%_at_50%_90%,rgba(255,255,255,0.12),rgba(255,255,255,0)_70%)]" />
-              {c.badge ? (
-                <span className="absolute left-3 top-3 rounded-full bg-white text-black text-[11px] font-semibold px-2 py-0.5 shadow">
-                  {c.badge}
-                </span>
-              ) : null}
-              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6">
-                <div className="rounded-xl border border-white/10 bg-black/45 backdrop-blur px-4 py-3 md:px-5 md:py-4">
-                  <h3 className="text-xl md:text-2xl font-extrabold leading-tight">{c.title}</h3>
-                  <p className="mt-1 text-white/80 text-[13px] md:text-sm">{c.note}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[11px] text-white/60">Explore {c.title}</span>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white text-black px-3 py-1.5 text-xs font-semibold transition-all duration-200 group-hover:gap-3 group-hover:scale-[1.03]">
-                      Shop Now <ChevronRight size={14} />
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-white/30 transition duration-200 group-hover:ring-2" />
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }

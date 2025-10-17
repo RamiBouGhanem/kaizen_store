@@ -38,7 +38,7 @@ function useSectionActive(id: string) {
   return visible;
 }
 
-function useArrowScroll(ref: React.RefObject<HTMLDivElement>, step = 0.45) {
+function useArrowScroll(ref: React.RefObject<HTMLDivElement | null>, step = 0.45) {
   return (dir: "left" | "right") => {
     const el = ref.current;
     if (!el) return;
@@ -180,7 +180,7 @@ const Styles = () => (
 ---------------------------------------- */
 export default function OldiesGoldies() {
   const active = useSectionActive("goldies");
-  const scrollerRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [inView, setInView] = useState(false);
   const scrollByArrow = useArrowScroll(scrollerRef, 0.45);
 
@@ -222,11 +222,7 @@ export default function OldiesGoldies() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 mt-2 flex gap-6 items-stretch">
         {/* Left: slider */}
-        <div
-          className={`tunnel flex-1 relative ${
-            inView ? "in-view" : ""
-          } transition-all`}
-        >
+        <div className={`tunnel flex-1 relative ${inView ? "in-view" : ""} transition-all`}>
           {/* buttons */}
           <button className="nav-btn left" onClick={() => scrollByArrow("left")} aria-label="Previous">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -279,11 +275,7 @@ export default function OldiesGoldies() {
         </div>
 
         {/* Right: Sticky phrase */}
-        <div
-          className={`classic-rail ${
-            inView ? "entering" : "exiting"
-          } transition-all`}
-        >
+        <div className={`classic-rail ${inView ? "entering" : "exiting"} transition-all`}>
           <span className="classic-text p-14">CLASSIC FINDS</span>
         </div>
       </div>

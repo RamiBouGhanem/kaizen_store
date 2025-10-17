@@ -1,5 +1,3 @@
-// src/components/SectionDivider.tsx
-
 export default function SectionDivider({
   height = "3.5rem",
   from = "rgba(56,189,248,0.12)",  // sky-400-ish

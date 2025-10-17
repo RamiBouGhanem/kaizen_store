@@ -1,5 +1,5 @@
 // src/components/ScrollEffects.tsx
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 /**
  * ScrollEffects
@@ -10,10 +10,13 @@ import React, { useEffect } from "react";
  */
 export default function ScrollEffects() {
   useEffect(() => {
+    // Guard for SSR / non-browser environments
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+
     const prefersReduced =
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
     // ---------- REVEAL: set stagger + optional per-element duration ----------
     const revealEls = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
@@ -32,9 +35,9 @@ export default function ScrollEffects() {
     // assign stagger delays within each container
     containerMap.forEach((children, parent) => {
       const step = Number(parent.getAttribute("data-stagger")) || 120; // ms (slower)
-      children.forEach((el, i) => {
-        if (!el.style.getPropertyValue("--reveal-delay")) {
-          el.style.setProperty("--reveal-delay", `${i * step}ms`);
+      children.forEach((child, i) => {
+        if (!child.style.getPropertyValue("--reveal-delay")) {
+          child.style.setProperty("--reveal-delay", `${i * step}ms`);
         }
       });
     });
@@ -48,14 +51,16 @@ export default function ScrollEffects() {
       if (customDur) el.style.setProperty("--reveal-duration", customDur);
     });
 
-    const revealObserver =
-      !prefersReduced &&
-      "IntersectionObserver" in window &&
-      new IntersectionObserver(
+    // Create observers with explicit null-able types to avoid union with boolean
+    let revealObserver: IntersectionObserver | null = null;
+
+    if (!prefersReduced && "IntersectionObserver" in window) {
+      revealObserver = new IntersectionObserver(
         (entries, obs) => {
           entries.forEach((entry) => {
             const el = entry.target as HTMLElement;
             if (entry.isIntersecting) {
+              // Defer to next frame for smoother CSS transition application
               requestAnimationFrame(() => el.classList.add("is-visible"));
               obs.unobserve(el); // reveal once
             }
@@ -67,19 +72,24 @@ export default function ScrollEffects() {
           rootMargin: "0px 0px -6% 0px",
         }
       );
+    }
 
-    if (revealObserver) revealEls.forEach((el) => revealObserver.observe(el));
-    else revealEls.forEach((el) => el.classList.add("is-visible"));
+    if (revealObserver) {
+      revealEls.forEach((el) => revealObserver!.observe(el));
+    } else {
+      // Fallback: instantly visible
+      revealEls.forEach((el) => el.classList.add("is-visible"));
+    }
 
     // ---------- OBSERVE: section state toggling (e.g., Featured) ----------
     const observed = Array.from(
       document.querySelectorAll<HTMLElement>("[data-observe]")
     );
 
-    const sectionObserver =
-      !prefersReduced &&
-      "IntersectionObserver" in window &&
-      new IntersectionObserver(
+    let sectionObserver: IntersectionObserver | null = null;
+
+    if (!prefersReduced && "IntersectionObserver" in window) {
+      sectionObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             const el = entry.target as HTMLElement;
@@ -93,17 +103,22 @@ export default function ScrollEffects() {
           rootMargin: "0px 0px -5% 0px",
         }
       );
+    }
 
-    if (sectionObserver) observed.forEach((el) => sectionObserver.observe(el));
-    else observed.forEach((el) => el.classList.add("in-view"));
+    if (sectionObserver) {
+      observed.forEach((el) => sectionObserver!.observe(el));
+    } else {
+      // Fallback: mark as in-view
+      observed.forEach((el) => el.classList.add("in-view"));
+    }
 
     // ---------- PARALLAX ----------
     const parallaxes = Array.from(document.querySelectorAll<HTMLElement>(".parallax"));
-    let raf = 0;
+    let raf: number | null = null;
 
     const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
+      if (raf !== null) return;
+      raf = window.requestAnimationFrame(() => {
         const winH = window.innerHeight;
         const scrollTop = window.scrollY;
 
@@ -117,7 +132,7 @@ export default function ScrollEffects() {
           el.style.setProperty("--pY", `${delta.toFixed(2)}px`);
         });
 
-        raf = 0;
+        raf = null;
       });
     };
 
@@ -127,13 +142,14 @@ export default function ScrollEffects() {
       window.addEventListener("resize", onScroll);
     }
 
+    // Cleanup
     return () => {
-      revealObserver?.disconnect();
-      sectionObserver?.disconnect();
+      if (revealObserver) revealObserver.disconnect();
+      if (sectionObserver) sectionObserver.disconnect();
       if (!prefersReduced) {
         window.removeEventListener("scroll", onScroll);
         window.removeEventListener("resize", onScroll);
-        if (raf) cancelAnimationFrame(raf);
+        if (raf !== null) window.cancelAnimationFrame(raf);
       }
     };
   }, []);

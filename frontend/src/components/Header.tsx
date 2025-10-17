@@ -11,6 +11,10 @@ type HeaderProps = {
   onSearch?: (value: string) => void;
 };
 
+type NavItem =
+  | { label: "Shop" | "About"; to: "/" | "/about" }
+  | { label: "New" | "Collections"; to: "/"; hash: "new" | "trending" };
+
 export default function Header({
   api,
   title = "KAIZEN",
@@ -65,7 +69,6 @@ export default function Header({
       : "bg-neutral-950/90 border-white/10",
   ].join(" ");
 
-  // Clean + uppercase wordmark
   const wordmark =
     (title || "KAIZEN")
       .replace(/^[^\p{L}\p{N}]+/u, "")
@@ -73,12 +76,11 @@ export default function Header({
       .trim()
       .toUpperCase() || "KAIZEN";
 
-  // Nav items (desktop & mobile)
-  const navItems = [
-    { label: "Shop", to: "/" },          // home
-    { label: "New", to: "/#new" },       // section on home
-    { label: "Collections", to: "/#trending" }, // section on home
-    { label: "About", to: "/about" },    // separate route
+  const navItems: NavItem[] = [
+    { label: "Shop", to: "/" },
+    { label: "New", to: "/", hash: "new" },
+    { label: "Collections", to: "/", hash: "trending" },
+    { label: "About", to: "/about" },
   ];
 
   return (
@@ -92,7 +94,6 @@ export default function Header({
       </a>
 
       <header className={`relative ${headerClasses}`} role="banner">
-        {/* Subtle top sheen when at top */}
         {!scrolled && (
           <div
             aria-hidden
@@ -111,7 +112,7 @@ export default function Header({
               {open ? <X size={20} className="text-white" /> : <Menu size={20} className="text-white" />}
             </button>
 
-            {/* BRAND: KAIZEN + slogan — use Router Link */}
+            {/* BRAND */}
             <Link
               to="/"
               className="relative inline-flex items-center gap-3 select-none"
@@ -149,28 +150,39 @@ export default function Header({
               </span>
             </Link>
 
-            {/* Primary nav (desktop) — Router Links */}
+            {/* Primary nav */}
             <nav aria-label="Primary" className="hidden md:flex items-center gap-1 ml-4">
-              {navItems.map(({ label, to }) => (
-                <Link
-                  key={label}
-                  to={to}
-                  className={({ isActive }) =>
-                    [
-                      "relative px-3 py-2 text-sm rounded-lg transition duration-150 group",
-                      "hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20",
-                      isActive ? "text-white" : "text-white/80 hover:text-white",
-                    ].join(" ")
-                  }
-                  activeOptions={{ exact: label === "Shop" }} // exact on home
-                >
-                  {label}
-                  <span
-                    aria-hidden
-                    className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-white/70 rounded-full transition-all duration-300 group-hover:w-full group-hover:left-0 group-focus:w-full group-focus:left-0"
-                  />
-                </Link>
-              ))}
+              {navItems.map((item) =>
+                "hash" in item ? (
+                  // Hash links: same route ("/") + a hash segment
+                  <Link
+                    key={item.label}
+                    to="/"
+                    hash={item.hash}
+                    className="relative px-3 py-2 text-sm rounded-lg transition duration-150 group hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20 text-white/80 hover:text-white"
+                    activeOptions={{ exact: true }}
+                  >
+                    {item.label}
+                    <span
+                      aria-hidden
+                      className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-white/70 rounded-full transition-all duration-300 group-hover:w-full group-hover:left-0 group-focus:w-full group-focus:left-0"
+                    />
+                  </Link>
+                ) : (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className="relative px-3 py-2 text-sm rounded-lg transition duration-150 group hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20 text-white/80 hover:text-white"
+                    activeOptions={{ exact: item.to === "/" }}
+                  >
+                    {item.label}
+                    <span
+                      aria-hidden
+                      className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-white/70 rounded-full transition-all duration-300 group-hover:w-full group-hover:left-0 group-focus:w-full group-focus:left-0"
+                    />
+                  </Link>
+                )
+              )}
             </nav>
 
             <div className="ml-auto" />
@@ -205,7 +217,7 @@ export default function Header({
               </div>
             </div>
 
-            {/* Desktop cart — use Link if it's an internal route */}
+            {/* Desktop cart */}
             <div className="hidden md:block">
               <CartButton count={cartCount} />
             </div>
@@ -253,7 +265,7 @@ export default function Header({
           </div>
         </div>
 
-        {/* Mobile nav sheet — Router Links */}
+        {/* Mobile nav sheet */}
         <div
           className={[
             "md:hidden border-t border-white/10",
@@ -265,37 +277,52 @@ export default function Header({
           aria-label="Mobile navigation"
         >
           <nav className="px-4 py-3 grid gap-1">
-            {navItems.map(({ label, to }) => (
-              <Link
-                key={label}
-                to={to}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition duration-150"
-                activeOptions={{ exact: label === "Shop" }}
-              >
-                <span className="text-sm">{label}</span>
-                <span className="text-xs text-white/60">Explore</span>
-              </Link>
-            ))}
+            {navItems.map((item) =>
+              "hash" in item ? (
+                <Link
+                  key={item.label}
+                  to="/"
+                  hash={item.hash}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition duration-150"
+                  activeOptions={{ exact: true }}
+                >
+                  <span className="text-sm">{item.label}</span>
+                  <span className="text-xs text-white/60">Explore</span>
+                </Link>
+              ) : (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition duration-150"
+                  activeOptions={{ exact: item.to === "/" }}
+                >
+                  <span className="text-sm">{item.label}</span>
+                  <span className="text-xs text-white/60">Explore</span>
+                </Link>
+              )
+            )}
           </nav>
         </div>
       </header>
+
+      {/* Tip: add in global CSS to highlight active links */}
+      {/* a[aria-current="page"] { color: #fff; font-weight: 600; } */}
     </>
   );
 }
 
-// If /cart is an internal route, use Link. If it's external, keep <a>.
+// Keep anchor until you add a /cart route in your router.
 function CartButton({ count = 0 }: { count?: number }) {
   return (
-    <Link
-      to="/cart"
+    <a
+      href="/cart"
       className="relative inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/25 transition duration-150 hover:shadow-white/20 hover:shadow-lg"
       aria-label="Cart"
     >
-      <ShoppingCart size={18} className="text-white transition duration-150 group-hover:scale-[1.05]" />
-      <span className="hidden sm:inline text-sm text-white/90 transition duration-150 group-hover:text-white">
-        Cart
-      </span>
+      <ShoppingCart size={18} className="text-white transition duration-150" />
+      <span className="hidden sm:inline text-sm text-white/90 transition duration-150">Cart</span>
       {count > 0 && (
         <span
           className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] rounded-full text-[11px] bg-white text-black font-semibold px-1"
@@ -304,6 +331,6 @@ function CartButton({ count = 0 }: { count?: number }) {
           {count > 99 ? "99+" : count}
         </span>
       )}
-    </Link>
+    </a>
   );
 }

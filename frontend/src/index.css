@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* =================== Motion tokens (longer by default) =================== */
+:root {
+  --reveal-duration: 1100ms;  /* was faster; now slower so users see it */
+  --reveal-ease: cubic-bezier(.22,.61,.36,1);
+  --reveal-delay: 0ms;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .parallax { transition: none !important; transform: none !important; }
+}
+
+/* =================== Reveal engine =================== */
+.reveal {
+  opacity: 0;
+  will-change: transform, opacity;
+  transition-property: opacity, transform, filter;
+  transition-duration: var(--reveal-duration);
+  transition-timing-function: var(--reveal-ease);
+  transition-delay: var(--reveal-delay);
+}
+.reveal:not([data-animate]) { transform: translateY(18px); filter: blur(1px); }
+.reveal[data-animate="fade-up"]    { transform: translateY(20px); filter: blur(1px); }
+.reveal[data-animate="fade-right"] { transform: translateX(-26px); filter: blur(1px); }
+.reveal[data-animate="fade-left"]  { transform: translateX(26px);  filter: blur(1px); }
+.reveal[data-animate="zoom-in"]    { transform: scale(.94);        filter: blur(1px); }
+.reveal[data-animate="flip-up"]    { transform: perspective(900px) rotateX(8deg) translateY(12px); transform-origin: 50% 100%; }
+.reveal.is-visible {
+  opacity: 1; transform: none; filter: none;
+}
+
+/* =================== Parallax =================== */
+.parallax {
+  transform: translate3d(0, var(--pY, 0px), 0);
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* =================== Subtle interaction helpers =================== */
+.hover-lift {
+  transition: transform 320ms var(--reveal-ease), box-shadow 320ms var(--reveal-ease);
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 34px rgba(0,0,0,.28);
+}
+
+/* =================== Featured (section-level animation polish) =================== */
+/* We hook onto [data-observe="featured"] to add/remove .in-view while scrolling */
+
+#featured .top-band {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: transform 900ms var(--reveal-ease), opacity 900ms var(--reveal-ease);
+}
+#featured.in-view .top-band {
+  opacity: 1;
+  transform: none;
+}
+
+#featured .headline-underline {
+  transform: scaleX(0);
+  transform-origin: 0% 50%;
+  opacity: .85;
+  transition: transform 1000ms var(--reveal-ease) 180ms;
+}
+#featured.in-view .headline-underline {
+  transform: scaleX(1);
+}
+
+#featured .controls {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: transform 900ms var(--reveal-ease) 140ms, opacity 900ms var(--reveal-ease) 140ms;
+}
+#featured.in-view .controls {
+  opacity: 1;
+  transform: none;
+}
+
+/* Slider container “settle” */
+#featured .slider-wrap {
+  opacity: 0;
+  transform: scale(.985);
+  transition: transform 1100ms var(--reveal-ease) 60ms, opacity 900ms var(--reveal-ease) 60ms;
+}
+#featured.in-view .slider-wrap {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Sweep shimmer across the slider once it comes into view */
+@keyframes feature-sweep {
+  0%   { transform: translateX(-140%); opacity: 0; }
+  12%  { opacity: .35; }
+  88%  { opacity: .35; }
+  100% { transform: translateX(140%); opacity: 0; }
+}
+#featured .sweep {
+  position: absolute; inset: 0 auto 0 0;
+  width: 28%;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.20) 40%, rgba(255,255,255,0) 100%);
+  filter: blur(6px);
+  pointer-events: none;
+  opacity: 0;
+}
+#featured.in-view .sweep {
+  animation: feature-sweep 1400ms ease-out 220ms 1 forwards;
+}
+
+/* Optional: faint grid fade when section enters */
+#featured .grid-fade {
+  opacity: 0;
+  transition: opacity 1200ms var(--reveal-ease);
+}
+#featured.in-view .grid-fade { opacity: .18; }
+
+/* Card cascade refinement when in view (extra polish on top of .reveal) */
+#featured.in-view .card-cascade {
+  transition-delay: calc(var(--i, 0) * 140ms);
+}
+
+/* Optional seam to smooth transitions between dark/colored panels */
+.section-seam {
+  background: linear-gradient(to bottom, rgba(255,255,255,0.06), transparent 60%);
+  height: 12px; width: 100%;
+}

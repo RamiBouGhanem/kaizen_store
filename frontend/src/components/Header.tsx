@@ -267,7 +267,8 @@ function QuickShop() {
             {clubs.map((club) => (
               <Link
                 key={club}
-                to={`/shop?team=${encodeURIComponent(club)}`}
+                to="/shop"
+                search={{ team: club }} 
                 className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 hover:bg-white/10 transition group flex items-center justify-between"
               >
                 <span className="truncate">{club}</span>
@@ -286,7 +287,6 @@ function QuickShop() {
 
 /* === Main Header =========================================================== */
 export default function Header({
-  api,
   title = "KAIZEN",
   // consume but don’t use (we removed header search)
   defaultSearch: _defaultSearch,
@@ -466,7 +466,7 @@ export default function Header({
                     key={item.label}
                     to={item.to}
                     className={`relative text-sm font-medium text-white/70 ${hoverStyle} group`}
-                    activeOptions={{ exact: item.to === "/" }}
+                    activeOptions={{ exact: item.to === "/shop" }}
                     activeProps={{ className: "text-white" }}
                   >
                     <span className="inline-block">
@@ -555,7 +555,7 @@ export default function Header({
                   to={item.to}
                   onClick={() => setOpen(false)}
                   className="flex items-center justify-between rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 transition group"
-                  activeOptions={{ exact: item.to === "/" }}
+                  activeOptions={{ exact: item.to === "/shop" }}
                 >
                   <span className="text-sm transition group-hover:translate-x-1">
                     {item.label}
@@ -621,18 +621,20 @@ export default function Header({
               </div>
               <div className="px-3 pb-3 grid grid-cols-2 gap-2">
                 {TOP_CLUBS.map((club) => (
-                  <Link
-                    key={club}
-                    to={`/shop?team=${encodeURIComponent(club)}`}
-                    onClick={() => setOpen(false)}
-                    className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 hover:bg-white/10 transition group flex items-center justify-between"
-                  >
-                    <span className="truncate">{club}</span>
-                    <ChevronRight
-                      size={16}
-                      className="text-white/60 group-hover:translate-x-0.5 transition shrink-0"
-                    />
-                  </Link>
+                 <Link
+  key={club}
+  to="/shop"
+  search={{ team: club } as any} // if your /shop route defines { team?: string }, you can drop "as any"
+  onClick={() => setOpen(false)}
+  className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 hover:bg-white/10 transition group flex items-center justify-between"
+>
+  <span className="truncate">{club}</span>
+  <ChevronRight
+    size={16}
+    className="text-white/60 group-hover:translate-x-0.5 transition shrink-0"
+  />
+</Link>
+
                 ))}
               </div>
             </div>

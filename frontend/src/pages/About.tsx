@@ -7,7 +7,7 @@ import kaizenLogo from "../assets/kaizen-logo.png";
 export default function About() {
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
-      <Header title="KAIZEN" cartCount={0} />
+      <Header title="KAIZEN" />
 
       {/* ===================== HERO (Pro split: copy left, logo right) ===================== */}
       <section className="relative border-b border-white/10">

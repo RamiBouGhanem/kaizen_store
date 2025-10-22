@@ -41,80 +41,66 @@ export default function ShopByCategory() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [playHeader, setPlayHeader] = useState(false);
   const [playGrid, setPlayGrid] = useState(false);
-  const playedRef = useRef(false); // tracks current intersection state
+  const playedRef = useRef(false);
   const enterTimer = useRef<number | null>(null);
-
-  // Re-trigger key. Increment on each "enter" so animations replay.
   const [cycle, setCycle] = useState(0);
 
-  // ---- Timing knobs (friendlier defaults)
-  const DUR = {
-    headerIn: 650,
-    headerDelay: 20,
-    barIn: 600,
-    barDelay: 260,
-    ctaDelay: 320,
-    cardIn: 720,
-    cardStagger: 70,
-    hoverTrans: 700,
-    shine: 1100,
-    pulse: 1800,
-    gridDelayAfterHeader: 420, // header -> grid sequence
-  };
-
+  // Motion prefs
   const prefersReduced =
     typeof window !== "undefined" &&
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // Touch/pen devices (disable tilt/parallax there)
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(pointer: coarse)").matches;
+
+  // ---- Timing knobs
+const DUR = {
+  headerIn: 260,
+  headerDelay: 0,
+  barIn: 240,
+  barDelay: 60,
+  ctaDelay: 80,
+  cardIn: 360,
+  cardStagger: 28,
+  hoverTrans: 240,
+  gridDelayAfterHeader: 120,
+} as const;
+
+
+
   useEffect(() => {
     const node = sectionRef.current;
     if (!node) return;
 
-    if (prefersReduced) {
-      // No motion: just show instantly. But still allow re-trigger by showing/hiding.
-      const io = new IntersectionObserver(
-        (entries) => {
-          const visible = entries.some((e) => e.isIntersecting);
-          setPlayHeader(visible);
-          setPlayGrid(visible);
-        },
-        { rootMargin: "0px 0px -20% 0px", threshold: 0.25 }
-      );
-      io.observe(node);
-      return () => io.disconnect();
-    }
-
-    const onEnter = () => {
-      // Only do this on actual edge (false -> true)
-      if (!playedRef.current) {
-        playedRef.current = true;
-        setCycle((c) => c + 1); // force remount of animated bits
-        setPlayHeader(true);
-        // sequence into grid
-        enterTimer.current = window.setTimeout(() => setPlayGrid(true), DUR.gridDelayAfterHeader);
-      }
-    };
-
-    const onExit = () => {
-      // Only on edge (true -> false)
-      if (playedRef.current) {
-        playedRef.current = false;
-        if (enterTimer.current) {
-          clearTimeout(enterTimer.current);
-          enterTimer.current = null;
-        }
-        // Reset so next enter will replay
-        setPlayHeader(false);
-        setPlayGrid(false);
-      }
-    };
-
     const io = new IntersectionObserver(
       (entries) => {
         const visible = entries.some((e) => e.isIntersecting);
-        if (visible) onEnter();
-        else onExit();
+        if (prefersReduced) {
+          setPlayHeader(visible);
+          setPlayGrid(visible);
+          return;
+        }
+        if (visible && !playedRef.current) {
+          playedRef.current = true;
+          setCycle((c) => c + 1);
+          setPlayHeader(true);
+          enterTimer.current = window.setTimeout(
+            () => setPlayGrid(true),
+            DUR.gridDelayAfterHeader
+          );
+        } else if (!visible && playedRef.current) {
+          playedRef.current = false;
+          if (enterTimer.current) {
+            clearTimeout(enterTimer.current);
+            enterTimer.current = null;
+          }
+          setPlayHeader(false);
+          setPlayGrid(false);
+        }
       },
       { rootMargin: "0px 0px -20% 0px", threshold: 0.25 }
     );
@@ -149,38 +135,18 @@ export default function ShopByCategory() {
       id="shop-by-category"
       ref={sectionRef}
       aria-label="Shop by Category"
-      className="relative w-full pb-14"
+      className="relative w-full pb-12 sm:pb-14"
     >
       <style>{`
-        /* Friendlier, quicker keyframes with less overshoot */
-        @keyframes sbc-fadeUp { 
-          0% { opacity:0; transform: translateY(14px); } 
-          100% { opacity:1; transform: translateY(0); } 
-        }
-        @keyframes sbc-slideIn {
-          0% { opacity:0; transform: translateY(18px); }
-          100% { opacity:1; transform: translateY(0); }
-        }
-        @keyframes sbc-growBar {
-          0% { transform: scaleX(0.4); opacity: 0; }
-          100% { transform: scaleX(1); opacity: 1; }
-        }
-        @keyframes sbc-rise {
-          0% { opacity: 0; transform: translateY(18px) scale(.992); visibility: visible; }
-          60% { opacity: 1; transform: translateY(0) scale(1.004); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        /* Hover FX trimmed to feel snappy, not flashy */
-        @keyframes sbc-shine {
-          0% { transform: translateX(-50%); opacity: 0; }
-          16% { opacity: .75; }
-          100% { transform: translateX(150%); opacity: 0; }
-        }
-        @keyframes sbc-borderPulse {
-          0%,100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
-          50% { box-shadow: 0 12px 36px rgba(255,255,255,0.14); }
-        }
+        @keyframes sbc-fadeUp { 0% { opacity:0; transform: translateY(14px); } 100% { opacity:1; transform: translateY(0); } }
+        @keyframes sbc-slideIn { 0% { opacity:0; transform: translateY(18px); } 100% { opacity:1; transform: translateY(0); } }
+        @keyframes sbc-growBar { 0% { transform: scaleX(0.4); opacity: 0; } 100% { transform: scaleX(1); opacity: 1; } }
+        @keyframes sbc-rise { 0% { opacity: 0; transform: translateY(18px) scale(.992); visibility: visible; }
+                              60% { opacity: 1; transform: translateY(0) scale(1.004); }
+                              100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes sbc-shine { 0% { transform: translateX(-50%); opacity: 0; }
+                               16% { opacity: .75; }
+                               100% { transform: translateX(150%); opacity: 0; } }
       `}</style>
 
       {/* Athletic backdrop */}
@@ -193,7 +159,7 @@ export default function ShopByCategory() {
         }}
       />
       <div
-        className="pointer-events-none absolute -z-10 w-[42vw] h-[42vw] rounded-full blur-[64px] opacity-[0.18]"
+        className="pointer-events-none absolute -z-10 w-[42vw] h-[42vw] rounded-full blur-[64px] opacity-[0.18] hidden md:block"
         style={{
           background:
             "radial-gradient(closest-side, rgba(56,189,248,0.65), rgba(56,189,248,0) 70%)",
@@ -202,7 +168,7 @@ export default function ShopByCategory() {
         }}
       />
       <div
-        className="pointer-events-none absolute -z-10 w-[38vw] h-[38vw] rounded-full blur-[64px] opacity-[0.16]"
+        className="pointer-events-none absolute -z-10 w-[38vw] h-[38vw] rounded-full blur-[64px] opacity-[0.16] hidden md:block"
         style={{
           background:
             "radial-gradient(closest-side, rgba(163,230,53,0.55), rgba(163,230,53,0) 70%)",
@@ -214,18 +180,14 @@ export default function ShopByCategory() {
         <div className="w-full h-full opacity-[0.06] bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:28px_28px]" />
       </div>
 
-      {/* Header (replays on each enter via key) */}
-      <div className="relative max-w-7xl mx-auto px-4">
-        <header className="flex items-end justify-between pt-10 pb-5" key={`hdr-${cycle}`}>
+      {/* Header */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header className="flex items-end justify-between pt-8 sm:pt-10 pb-4 sm:pb-5" key={`hdr-${cycle}`}>
           <div
-            style={
-              playHeader || prefersReduced
-                ? undefined
-                : { opacity: 0, visibility: "hidden" }
-            }
+            style={playHeader || prefersReduced ? undefined : { opacity: 0, visibility: "hidden" }}
           >
             <div
-              className="text-[11px] tracking-[0.28em] text-white/60"
+              className="text-[10px] sm:text-[11px] tracking-[0.28em] text-white/60"
               style={
                 playHeader && !prefersReduced
                   ? { animation: `sbc-fadeUp ${DUR.headerIn}ms cubic-bezier(.22,.61,.36,1) both` }
@@ -236,7 +198,7 @@ export default function ShopByCategory() {
             </div>
 
             <h2
-              className="mt-2 text-2xl md:text-3xl font-extrabold"
+              className="mt-2 text-xl sm:text-2xl md:text-3xl font-extrabold"
               style={
                 playHeader && !prefersReduced
                   ? {
@@ -251,7 +213,7 @@ export default function ShopByCategory() {
 
             <div
               aria-hidden
-              className="mt-3 h-1.5 w-28 origin-left rounded-full bg-gradient-to-r from-white/90 to-white/20"
+              className="mt-3 h-1.5 w-24 sm:w-28 origin-left rounded-full bg-gradient-to-r from-white/90 to-white/20"
               style={
                 playHeader && !prefersReduced
                   ? {
@@ -282,30 +244,31 @@ export default function ShopByCategory() {
         </header>
       </div>
 
-      {/* Grid (replays on each enter via key) */}
-      <div className="relative max-w-7xl mx-auto px-4">
+      {/* Grid */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           role="list"
           aria-label="Categories"
           tabIndex={0}
           onKeyDown={onKeyGrid}
-          className="grid h-[66vh] md:h-[72vh] grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
-          style={
-            playGrid || prefersReduced
-              ? undefined
-              : { opacity: 0, visibility: "hidden" }
-          }
+          className={[
+            "grid gap-4 md:gap-6",
+            // 1 col on mobile, 2 on small tablets, 3 on md+
+            "grid-cols-1 sm:grid-cols-2 md:grid-cols-3",
+          ].join(" ")}
+          style={playGrid || prefersReduced ? undefined : { opacity: 0, visibility: "hidden" }}
           key={`grid-${cycle}`}
         >
           {CATEGORIES.map((cat, i) => (
             <Card
-              key={`${cat.title}-${cycle}`} // remount cards each cycle
+              key={`${cat.title}-${cycle}`}
               cat={cat}
               id={cardIds[i]}
               delay={playGrid && !prefersReduced ? DUR.cardStagger * i : 0}
               alive={playGrid || prefersReduced}
               hoverDuration={DUR.hoverTrans}
               cardInDuration={DUR.cardIn}
+              isCoarsePointer={isCoarsePointer}
             />
           ))}
         </div>
@@ -323,6 +286,7 @@ function Card({
   alive,
   hoverDuration,
   cardInDuration,
+  isCoarsePointer,
 }: {
   cat: Category;
   id: string;
@@ -330,13 +294,16 @@ function Card({
   alive: boolean;
   hoverDuration: number;
   cardInDuration: number;
+  isCoarsePointer: boolean;
 }) {
   const cardRef = useRef<HTMLAnchorElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const ctaRef = useRef<HTMLSpanElement | null>(null);
 
-  // Tilt + parallax + magnetic CTA (gentler)
+  // Tilt/parallax only for precise pointers (mouse), not on touch
   useEffect(() => {
+    if (isCoarsePointer) return;
+
     const el = cardRef.current;
     const img = imgRef.current;
     const cta = ctaRef.current;
@@ -347,7 +314,6 @@ function Card({
       const x = (e.clientX - r.left) / r.width - 0.5;
       const y = (e.clientY - r.top) / r.height - 0.5;
 
-      // reduced tilt & parallax for comfort
       el.style.setProperty("--tiltX", `${(y * -4.5).toFixed(2)}deg`);
       el.style.setProperty("--tiltY", `${(x * 6).toFixed(2)}deg`);
       img.style.transform = `translate3d(${(x * 8).toFixed(1)}px, ${(y * 6).toFixed(1)}px, 0) scale(1.035)`;
@@ -366,7 +332,7 @@ function Card({
       el.removeEventListener("mousemove", onMove);
       el.removeEventListener("mouseleave", onLeave);
     };
-  }, []);
+  }, [isCoarsePointer]);
 
   return (
     <a
@@ -380,7 +346,12 @@ function Card({
         "shadow-[0_10px_32px_rgba(0,0,0,0.35)]",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
         "transition-all",
-        "h-[18rem] md:h-auto md:min-h-[calc(72vh-0.5rem)]",
+        // Responsive heights:
+        // - Mobile: fixed aspect for consistency
+        // - sm: taller cards
+        // - md+: your original tall layout via min-height
+        "aspect-[4/5] sm:aspect-[3/4] md:aspect-auto",
+        "md:min-h-[28rem] lg:min-h-[calc(72vh-0.5rem)]",
       ].join(" ")}
       style={{
         transform: `perspective(1000px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg))`,
@@ -388,7 +359,7 @@ function Card({
         animationDelay: alive ? `${delay}ms` : "0ms",
       }}
     >
-      {/* Image with subtle parallax on hover */}
+      {/* Image */}
       <img
         ref={imgRef}
         src={cat.image}
@@ -396,13 +367,19 @@ function Card({
         loading="lazy"
         decoding="async"
         className="absolute inset-0 h-full w-full object-cover"
-        style={{ transform: "scale(1.02)", transition: `transform ${hoverDuration}ms cubic-bezier(.22,.61,.36,1)` }}
+        style={{
+          transform: "scale(1.02)",
+          transition: `transform ${hoverDuration}ms cubic-bezier(.22,.61,.36,1)`,
+        }}
       />
 
-      {/* Hover shine (LTR) */}
+      {/* Shine — only visible on hover-capable devices */}
       <div
         aria-hidden
-        className="sbc-shine pointer-events-none absolute inset-y-0 left-0 w-[45%] opacity-0"
+        className={[
+          "sbc-shine pointer-events-none absolute inset-y-0 left-0 w-[45%] opacity-0",
+          isCoarsePointer ? "hidden" : "block",
+        ].join(" ")}
         style={{
           background:
             "linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.24) 50%, rgba(255,255,255,0) 70%)",
@@ -413,9 +390,6 @@ function Card({
       {/* Legibility gradient */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent" />
 
-      {/* Border glow (animated on hover twice, not infinite) */}
-      <div className="sbc-glow pointer-events-none absolute inset-0 rounded-2xl" />
-
       {/* Badge */}
       {cat.badge ? (
         <span className="absolute left-3 top-3 rounded-full bg-white text-black text-[11px] font-semibold px-2 py-0.5 shadow">
@@ -424,16 +398,20 @@ function Card({
       ) : null}
 
       {/* Content */}
-      <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6">
+      <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 md:p-5">
         <div
           className={[
             "rounded-xl border border-white/10 bg-black/45 backdrop-blur",
-            "px-4 py-3 md:px-5 md:py-4",
+            "px-3 py-2.5 sm:px-4 sm:py-3 md:px-5 md:py-4",
             "transition-all duration-300 group-hover:border-white/20 group-hover:bg-black/50",
           ].join(" ")}
         >
-          <h3 className="text-xl md:text-2xl font-extrabold leading-tight">{cat.title}</h3>
-          <p className="mt-1 text-white/80 text-[13px] md:text-sm">{cat.note}</p>
+          <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-tight">
+            {cat.title}
+          </h3>
+          <p className="mt-1 text-white/80 text-[12px] sm:text-[13px] md:text-sm">
+            {cat.note}
+          </p>
 
           <div className="mt-3 flex items-center justify-between">
             <span className="text-[11px] text-white/60">Explore {cat.title}</span>
@@ -451,8 +429,13 @@ function Card({
         </div>
       </div>
 
-      {/* Hover ring */}
-      <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-white/30 transition duration-200 group-hover:ring-2" />
+      {/* Hover ring (kept subtle on touch) */}
+      <span
+        className={[
+          "pointer-events-none absolute inset-0 rounded-2xl ring-0 ring-white/30 transition duration-200",
+          isCoarsePointer ? "" : "group-hover:ring-2",
+        ].join(" ")}
+      />
     </a>
   );
 }

@@ -1,444 +1,420 @@
-import React, { useCallback, useEffect, useState } from "react";
+// src/pages/Home.tsx
+import React from "react";
 import Header from "../components/Header";
-import { Instagram, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react";
-import { ChevronRight, ChevronLeft, ShieldCheck, Truck, RefreshCw } from "lucide-react";
+import { ChevronRight, Circle } from "lucide-react";
 
-import OldiesGoldies from "../sections/OldiesGoldies";
-import FeaturedCollection from "../sections/FeaturedCollection";
+// Rails you already have
 import ScrollEffects from "../components/ScrollEffects";
-import ShopByCategory from "../sections/ShopByCategory";
-import ShopByClub, { type Team as ClubTeam } from "../sections/ShopByClub"; // ← type-only import
+// import ShopByCategory from "../sections/ShopByCategory";
+import FeaturedCollection from "../sections/FeaturedCollection";
+import OldiesGoldies from "../sections/OldiesGoldies";
+import ShopByClub, { type Team as ClubTeam } from "../sections/ShopByClub";
 
-// Background + hero playlist assets
-import bg from "../assets/pexels-eslames1-31160056.jpg";
-import heroVideo1 from "../assets/homePageVideo1.mp4";
-import heroVideo2 from "../assets/homePageVideo2.mp4";
-import heroVideo3 from "../assets/homePageVideo3.mp4";
-import kaizenLogo from "../assets/kaizen-logo.png";
+/**
+ * AUTO-ASSET LOADER (Vite 5+)
+ * Accepts any of: .jpg .jpeg .png .webp .avif
+ * Expected basenames in /src/assets:
+ *  - arsenal-kit.*
+ *  - bayern-kit.*
+ *  - real-madrid-kit.*
+ *  - mancity-kit.*
+ *  - barcelona-kit.*
+ */
+const assetMap = import.meta.glob("../assets/*.{jpg,jpeg,png,webp,avif}", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
 
-const HERO_VIDEOS: string[] = [heroVideo1, heroVideo2, heroVideo3];
+function findAsset(basename: string): string | undefined {
+  const pattern = new RegExp(`/${basename}\\.(jpg|jpeg|png|webp|avif)$`, "i");
+  const hit = Object.entries(assetMap).find(([path]) => pattern.test(path));
+  return hit?.[1];
+}
+
+type Slide = {
+  slug:
+    | "arsenal-kit"
+    | "bayern-kit"
+    | "real-madrid-kit"
+    | "mancity-kit"
+    | "barcelona-kit";
+  name: string;
+  image?: string;
+  // copy + theming
+  overline: string;
+  headline: string;
+  tagline: string;
+  headlineGradient: string; // gradient for headline text
+  chipBg: string;
+  chipText: string;
+  ctaGradient: string; // gradient for CTA
+  /** Exact team value to pass as /shop?team=... (falls back to name if omitted) */
+  teamValue?: string;
+};
+
+const BASE_SLIDES: Omit<Slide, "image">[] = [
+  {
+    slug: "arsenal-kit",
+    name: "Arsenal",
+    teamValue: "Arsenal",
+    overline: "Arsenal Kit",
+    headline: "CHASE THE DUSK",
+    tagline: "Blue pace. Sunset swagger.",
+    headlineGradient: "from-sky-300 via-sky-400 to-indigo-300",
+    chipBg: "bg-indigo-500/25",
+    chipText: "text-indigo-100",
+    ctaGradient: "from-sky-300 to-indigo-400",
+  },
+  {
+    slug: "bayern-kit",
+    name: "FC Bayern",
+    teamValue: "FC Bayern Munich",
+    overline: "Bayern Kit",
+    headline: "RED SETS THE RHYTHM",
+    tagline: "Relentless tempo. Trophy intent.",
+    headlineGradient: "from-red-500 via-rose-500 to-rose-400",
+    chipBg: "bg-red-500/25",
+    chipText: "text-rose-100",
+    ctaGradient: "from-red-400 to-rose-500",
+  },
+  {
+    slug: "real-madrid-kit",
+    name: "Real Madrid",
+    teamValue: "Real Madrid",
+    overline: "Real Madrid Kit",
+    headline: "WHITE. UNDER PRESSURE.",
+    tagline: "Precision control. Pure class.",
+    headlineGradient: "from-zinc-50 via-amber-100 to-zinc-50",
+    chipBg: "bg-zinc-100/30",
+    chipText: "text-neutral-900",
+    ctaGradient: "from-amber-100 to-zinc-50",
+  },
+  {
+    slug: "mancity-kit",
+    name: "Man City",
+    teamValue: "Manchester City",
+    overline: "City Kit",
+    headline: "SKY RULES THE GAME",
+    tagline: "Flow. Vision. Precision.",
+    headlineGradient: "from-sky-400 via-cyan-400 to-sky-300",
+    chipBg: "bg-sky-400/25",
+    chipText: "text-cyan-50",
+    ctaGradient: "from-sky-300 to-cyan-400",
+  },
+  {
+    slug: "barcelona-kit",
+    name: "Barcelona",
+    teamValue: "FC Barcelona",
+    overline: "Barcelona Kit",
+    headline: "PLAY WITH PRIDE",
+    tagline: "Blaugrana fire. Control with courage.",
+    headlineGradient: "from-indigo-500 via-fuchsia-500 to-rose-500",
+    chipBg: "bg-fuchsia-500/25",
+    chipText: "text-rose-100",
+    ctaGradient: "from-indigo-400 to-rose-500",
+  },
+];
 
 export default function Home() {
   const api = import.meta.env.VITE_API_URL as string | undefined;
 
+  const SLIDES: Slide[] = React.useMemo(
+    () =>
+      BASE_SLIDES.map((s) => ({
+        ...s,
+        image: findAsset(s.slug),
+      })),
+    []
+  );
+
+  const [idx, setIdx] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
+
+  // Mobile swipe
+  const touchStartX = React.useRef<number | null>(null);
+  const touchDeltaX = React.useRef(0);
+
+  const reduced =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+  // Auto-advance
+  React.useEffect(() => {
+    if (paused || reduced || SLIDES.length < 2) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % SLIDES.length), 6500);
+    return () => clearInterval(id);
+  }, [paused, reduced, SLIDES.length]);
+
+  // Dots keyboard support
+  const onDotKey = (i: number, e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setIdx(i);
+      setPaused(true);
+    }
+  };
+
+  // Touch swipe handlers
+  const onTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchDeltaX.current = 0;
+    setPaused(true);
+  };
+  const onTouchMove: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (touchStartX.current == null) return;
+    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
+  };
+  const onTouchEnd: React.TouchEventHandler<HTMLDivElement> = () => {
+    const threshold = 50; // px
+    if (Math.abs(touchDeltaX.current) > threshold) {
+      setIdx((i) =>
+        touchDeltaX.current > 0
+          ? (i - 1 + SLIDES.length) % SLIDES.length
+          : (i + 1) % SLIDES.length
+      );
+    }
+    touchStartX.current = null;
+    touchDeltaX.current = 0;
+    setPaused(false);
+  };
+
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+    <div className="min-h-screen bg-neutral-950 text-white antialiased scroll-smooth">
       <ScrollEffects />
-      <Header api={api} title="KAIZEN" cartCount={0} defaultSearch="" onSearch={() => {}} />
 
-      {/* ===================== HERO ===================== */}
-      <section className="relative border-b border-white/10">
+      {/* Micro-utilities */}
+      <style>{`
+        @keyframes rise { from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:translateY(0)} }
+        @keyframes shimmer { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        .fade-rise { animation: rise .55s cubic-bezier(.2,.9,.25,1) forwards }
+        .d1{ animation-delay:.05s } .d2{ animation-delay:.12s } .d3{ animation-delay:.2s }
+        .tunnel { position:absolute; inset:0; pointer-events:none;
+          background:
+            radial-gradient(120vmax 120vmax at 50% 45%, rgba(0,0,0,0) 0%, rgba(0,0,0,.08) 38%, rgba(0,0,0,.28) 58%, rgba(0,0,0,.6) 90%),
+            radial-gradient(40vmax 40vmax at -10% -10%, rgba(0,0,0,.55), transparent 55%),
+            radial-gradient(40vmax 40vmax at 110% -10%, rgba(0,0,0,.55), transparent 55%),
+            radial-gradient(40vmax 40vmax at -10% 110%, rgba(0,0,0,.55), transparent 55%),
+            radial-gradient(40vmax 40vmax at 110% 110%, rgba(0,0,0,.55), transparent 55%);
+        }
+        .topbottom-scrim{ position:absolute; inset:0;
+          background: linear-gradient(to bottom, rgba(0,0,0,.14), rgba(0,0,0,.46) 42%, rgba(8,10,14,.95)); }
+        .cta-anim{ background-size:220% 100%; animation: shimmer 9s ease infinite; }
+        @media (prefers-reduced-motion: reduce){
+          .fade-rise{ animation:none; opacity:1; transform:none }
+          .cta-anim{ animation:none }
+        }
+      `}</style>
+
+      {/* Skip link */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-black focus:px-3 focus:py-2"
+      >
+        Skip to content
+      </a>
+
+      {/* Promo strip */}
+      <div className="border-b border-white/10 bg-neutral-900/70 backdrop-blur">
+        <div className="mx-auto max-w-7xl px-4 py-2 text-center text-xs text-white/80">
+          New season drop · Free 7-day exchanges
+        </div>
+      </div>
+
+      <Header api={api} title="KAIZEN" defaultSearch="" onSearch={() => {}} />
+
+      {/* ===================== FULLSCREEN SLIDER ===================== */}
+      <section className="relative isolate border-b border-white/10">
         <div
-          className="relative"
-          style={{
-            backgroundImage: `url(${bg})`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            backgroundSize: "cover",
-            minHeight: "calc(100vh - 4rem)",
-          }}
+          className="relative min-h-[calc(100svh-4rem)]"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onFocusCapture={() => setPaused(true)}
+          onBlurCapture={() => setPaused(false)}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(140%_120%_at_80%_0%,rgba(0,0,0,0.12),rgba(0,0,0,0.8))]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/40 to-black/80" />
-
-          <div className="relative max-w-7xl mx-auto px-4 py-10 md:py-16">
-            <div className="grid lg:grid-cols-12 gap-8 items-center">
-              {/* Copy */}
-              <div className="lg:col-span-6">
-                <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.05]">
-                  You don’t stop{" "}
-                  <span className="inline-block align-baseline relative">
-                    Neither do we
-                    <span
-                      aria-hidden
-                      className="absolute -bottom-2 left-0 right-0 h-[6px] rounded-full bg-gradient-to-r from-white/70 to-white/10"
-                    />
+          {/* Slides */}
+          {SLIDES.map((s, i) => (
+            <div
+              key={s.slug}
+              className={`absolute inset-0 transition-opacity duration-700 ${
+                i === idx ? "opacity-100" : "opacity-0"
+              }`}
+              aria-hidden={i !== idx}
+            >
+              {s.image ? (
+                <img
+                  src={s.image}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  fetchPriority={i === 0 ? "high" : "auto"}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-neutral-900">
+                  <span className="text-sm text-white/60">
+                    Missing asset: <code>{s.slug}</code>
                   </span>
-                  .
+                </div>
+              )}
+
+              {/* Dim edges + scrim */}
+              <div className="tunnel" aria-hidden />
+              <div className="topbottom-scrim" aria-hidden />
+            </div>
+          ))}
+
+          {/* Centered content */}
+          <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-center justify-center px-4 text-center">
+            {SLIDES[idx] && (
+              <div className="w-full">
+                {/* Overline */}
+                <span
+                  className={[
+                    "mx-auto mb-3 inline-flex rounded-full px-3 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] backdrop-blur",
+                    SLIDES[idx].chipBg,
+                    SLIDES[idx].chipText,
+                    "fade-rise d1",
+                  ].join(" ")}
+                >
+                  {SLIDES[idx].overline}
+                </span>
+
+                {/* Headline */}
+                <h1
+                  className={[
+                    "mx-auto max-w-[16ch] font-extrabold tracking-tight",
+                    "text-[2rem] leading-[1.06] sm:text-[2.5rem] md:text-[3.25rem] lg:text-[4rem]",
+                    "bg-gradient-to-r bg-clip-text text-transparent",
+                    SLIDES[idx].headlineGradient,
+                    "fade-rise d2",
+                  ].join(" ")}
+                  style={{ backgroundSize: "220% 100%" }}
+                >
+                  {SLIDES[idx].headline}
                 </h1>
 
-                <p className="mt-4 max-w-prose text-lg md:text-xl leading-relaxed text-white/85">
-                  What drives you drives us — because greatness starts the moment you choose to
-                  continue. We build to honor your discipline.
+                {/* Tagline */}
+                <p className="fade-rise d3 mx-auto mt-2 max-w-[50ch] text-[0.95rem] leading-6 text-white/85 sm:text-base">
+                  {SLIDES[idx].tagline}
                 </p>
 
-                <div className="mt-6">
+                {/* CTA -> /shop?team=... */}
+                <div className="fade-rise d3 mt-5 flex items-center justify-center">
                   <a
-                    href="#featured"
-                    className="inline-flex items-center gap-2 rounded-xl bg-white text-black px-5 py-2.5 text-sm font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white/30"
+                    href={`/shop?team=${encodeURIComponent(
+                      SLIDES[idx].teamValue ?? SLIDES[idx].name
+                    )}`}
+                    className={[
+                      "cta-anim inline-flex h-10 items-center justify-center rounded-full px-4 sm:px-5",
+                      "text-[0.9rem] font-bold text-neutral-900 shadow-[0_18px_40px_-18px_rgba(255,255,255,.55)]",
+                      "focus:outline-none focus:ring-2 focus:ring-white/70",
+                      "bg-gradient-to-r",
+                      SLIDES[idx].ctaGradient,
+                    ].join(" ")}
+                    aria-label={`Shop ${SLIDES[idx].name} now`}
                   >
-                    Start your season <ChevronRight size={16} />
+                    Shop Now
+                    <ChevronRight className="ml-1.5" size={16} />
                   </a>
                 </div>
 
-                <div className="mt-7 grid grid-cols-3 gap-3 max-w-md">
-                  <TrustItem icon={<Truck size={16} />} title="Fast Delivery" note="2–5 days" />
-                  <TrustItem icon={<RefreshCw size={16} />} title="Easy Returns" note="7-day window" />
-                  <TrustItem icon={<ShieldCheck size={16} />} title="Secure Checkout" note="256-bit SSL" />
+                {/* Dots */}
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  {SLIDES.map((s, i) => (
+                    <button
+                      key={s.slug}
+                      aria-label={`Go to ${s.name}`}
+                      className={`grid h-2.5 w-2.5 place-items-center rounded-full border border-white/30 transition ${
+                        i === idx ? "bg-white" : "bg-white/10 hover:bg-white/20"
+                      }`}
+                      onClick={() => {
+                        setIdx(i);
+                        setPaused(true);
+                      }}
+                      onKeyDown={(e) => onDotKey(i, e)}
+                    >
+                      <Circle className="opacity-0" size={8} />
+                    </button>
+                  ))}
                 </div>
               </div>
-
-              {/* Spotlight playlist */}
-              <div className="lg:col-span-6">
-                <HeroPlaylist videos={HERO_VIDEOS} poster={bg} badge="New Drop" />
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
 
-      <ShopByCategory />
+      {/* ===================== RAILS ===================== */}
+      <main
+        id="main"
+        className="[content-visibility:auto] [contain-intrinsic-size:1px_1600px]"
+      >
+        {/* <section className="scroll-mt-24" aria-labelledby="cat-heading">
+          <h2 id="cat-heading" className="sr-only">Shop by category</h2>
+          <ShopByCategory />
+        </section> */}
 
-      {/* ============ FEATURED ============ */}
-      <FeaturedCollection />
+        <section
+          id="featured"
+          className="scroll-mt-24"
+          aria-labelledby="featured-heading"
+        >
+          <FeaturedCollection />
+        </section>
 
-      {/* ============ OLDIES BUT GOLDIES ============ */}
-      <OldiesGoldies />
+        <section
+          id="goldies"
+          className="scroll-mt-24"
+          aria-labelledby="goldies-heading"
+        >
+          <h2 id="goldies-heading" className="sr-only">
+            Classics
+          </h2>
+          <OldiesGoldies />
+        </section>
 
-      {/* ============ SHOP BY CLUB ============ */}
-      <ShopByClub
-        onSelect={(team: ClubTeam) => {
-          const url = new URL(window.location.href);
-          url.searchParams.set("club", team.slug);
-          window.history.pushState({}, "", url);
-          window.dispatchEvent(new CustomEvent("kaizen:club-selected", { detail: team }));
-        }}
-      />
+        <section
+          id="clubs"
+          className="scroll-mt-24"
+          aria-labelledby="clubs-heading"
+        >
+          <h2 id="clubs-heading" className="sr-only">
+            Shop by club
+          </h2>
+          <ShopByClub
+            onSelect={(team: ClubTeam) => {
+              const url = new URL(window.location.href);
+              url.searchParams.set("club", team.slug);
+              window.history.pushState({}, "", url);
+              window.dispatchEvent(
+                new CustomEvent("kaizen:club-selected", { detail: team })
+              );
+            }}
+          />
+        </section>
+      </main>
 
-      {/* ===================== FOOTER ===================== */}
-      <footer className="bg-neutral-950 border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+      {/* Footer */}
+      <footer className="mt-12 border-t border-white/10 bg-neutral-950">
+        <div className="mx-auto max-w-7xl px-4 py-10">
+          <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <div>
-              <a href="/" className="inline-flex items-center gap-3">
-                <span className="text-lg font-extrabold tracking-[0.16em] text-white">KAIZEN</span>
-              </a>
-              <p className="mt-2 text-sm text-white/70 max-w-xs">
-                Performance essentials engineered for the long run.
+              <span className="text-lg font-extrabold tracking-[0.16em]">
+                KAIZEN
+              </span>
+              <p className="mt-2 text-sm text-white/70">
+                Performance essentials engineered for the full 90.
               </p>
-              <div className="mt-4 flex items-center gap-2">
-                {[
-                  { Icon: Instagram, label: "Instagram", href: "#" },
-                  { Icon: Twitter, label: "Twitter / X", href: "#" },
-                  { Icon: Youtube, label: "YouTube", href: "#" },
-                ].map(({ Icon, label, href }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    aria-label={label}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] hover:bg-white/[0.12] hover:border-white/20 transition"
-                  >
-                    <Icon size={16} className="text-white" />
-                  </a>
-                ))}
-              </div>
             </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-white/90">Quick Links</h4>
-              <ul className="mt-3 space-y-2 text-sm">
-                {[
-                  { label: "Featured", href: "#featured" },
-                  { label: "Oldies but Goldies", href: "#goldies" },
-                ].map((l) => (
-                  <li key={l.label}>
-                    <a href={l.href} className="text-white/70 hover:text-white transition">
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-semibold text-white/90">Contact</h4>
-              <ul className="mt-3 space-y-2 text-sm">
-                <li>
-                  <a
-                    href="mailto:support@kaizen.com"
-                    className="inline-flex items-center gap-2 text-white/80 hover:text-white transition"
-                  >
-                    <Mail size={16} /> support@kaizen.com
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="tel:+10000000000"
-                    className="inline-flex items-center gap-2 text-white/80 hover:text-white transition"
-                  >
-                    <Phone size={16} /> +1 (000) 000-0000
-                  </a>
-                </li>
-                <li className="inline-flex items-center gap-2 text-white/60">
-                  <MapPin size={16} /> Cairo, EG
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8 border-t border-white/10 pt-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
-            <p className="text-xs text-white/50">© {new Date().getFullYear()} KAIZEN. All rights reserved.</p>
-            <div className="flex items-center gap-4 text-xs">
-              <a href="/privacy" className="text-white/60 hover:text-white transition">Privacy</a>
-              <span className="text-white/20" aria-hidden>•</span>
-              <a href="/terms" className="text-white/60 hover:text-white transition">Terms</a>
-              <span className="text-white/20" aria-hidden>•</span>
-              <a href="/support" className="text-white/60 hover:text-white transition">Support</a>
-            </div>
+            <p className="text-xs text-white/50">
+              © {new Date().getFullYear()} KAIZEN. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
-    </div>
-  );
-}
-
-/* -------------------- Shared bits -------------------- */
-function TrustItem({
-  icon, title, note,
-}: { icon: React.ReactNode; title: string; note: string }) {
-  return (
-    <div
-      className={[
-        "group inline-flex items-center gap-2 rounded-lg",
-        "border border-white/12 bg-white/[0.06] backdrop-blur mt-12",
-        "px-2.5 py-1.5 md:px-3 md:py-1.5",
-        "transition-all duration-200 ease-[cubic-bezier(.22,.61,.36,1)]",
-        "hover:bg-white/[0.10] hover:border-white/20",
-        "hover:shadow-[0_4px_14px_rgba(0,0,0,0.25)]",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "grid place-items-center shrink-0",
-          "size-5 md:size-6 rounded-md",
-          "bg-white/95 text-black",
-          "shadow-sm transition-transform duration-200 group-hover:scale-[1.04]",
-        ].join(" ")}
-        aria-hidden
-      >
-        {icon}
-      </span>
-      <div className="min-w-0 leading-tight">
-        <div className="text-[12.5px] md:text-[13px] font-semibold tracking-tight">{title}</div>
-        <div className="text-[11px] text-white/70 truncate">{note}</div>
-      </div>
-    </div>
-  );
-}
-
-/* =================== Hero Playlist =================== */
-type ResizeObserverLike = { observe: (el: Element) => void; disconnect: () => void; };
-
-function HeroPlaylist({
-  videos, poster, badge,
-}: { videos: string[]; poster?: string; badge?: string }) {
-  const DURATION = 520;
-  const [idx, setIdx] = useState(0);
-  const total = videos.length;
-
-  const [offsetPct, setOffsetPct] = useState<number>(-100);
-  const [transitionOn, setTransitionOn] = useState<boolean>(true);
-  const [animating, setAnimating] = useState<boolean>(false);
-
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const currentRef = React.useRef<HTMLVideoElement | null>(null);
-  const [containerW, setContainerW] = useState<number>(0);
-
-  useEffect(() => {
-    const el = containerRef.current as HTMLDivElement | null;
-    if (!el) return;
-
-    const measure = () => setContainerW(el.clientWidth);
-    measure();
-
-    let ro: ResizeObserverLike | null = null;
-    if (typeof window !== "undefined" && "ResizeObserver" in window) {
-      const RO = (window as unknown as { ResizeObserver: new (cb: ResizeObserverCallback) => ResizeObserverLike }).ResizeObserver;
-      ro = new RO(() => measure());
-      ro.observe(el);
-    } else if (typeof globalThis !== "undefined" && typeof (globalThis ).addEventListener === "function") {
-      // fallback (avoid TS narrowing issue)
-      (globalThis ).addEventListener("resize", measure);
-    }
-
-    return () => {
-      ro?.disconnect();
-      if (typeof globalThis !== "undefined" && typeof (globalThis).removeEventListener === "function") {
-        (globalThis ).removeEventListener("resize", measure);
-      }
-    };
-  }, []);
-
-  const reducedMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const prevIdx = (idx - 1 + total) % total;
-
-  const snapWithoutTransition = (targetPct: number) => {
-    setTransitionOn(false);
-    setOffsetPct(targetPct);
-    requestAnimationFrame(() => requestAnimationFrame(() => setTransitionOn(true)));
-  };
-
-  const slide = useCallback(
-    (direction: "next" | "prev") => {
-      if (animating || total < 2) return;
-      setAnimating(true);
-      setOffsetPct(direction === "next" ? -200 : 0);
-      window.setTimeout(() => {
-        setIdx((i) => (direction === "next" ? (i + 1) % total : (i - 1 + total) % total));
-        snapWithoutTransition(-100);
-        setAnimating(false);
-      }, DURATION);
-    },
-    [animating, total]
-  );
-
-  const next = useCallback(() => slide("next"), [slide]);
-  const prev = useCallback(() => slide("prev"), [slide]);
-
-  useEffect(() => {
-    const v = currentRef.current;
-    if (!v) return;
-    v.load();
-    const p = v.play?.();
-    if (p && typeof p.then === "function") p.catch(() => {});
-  }, [idx]);
-
-  useEffect(() => {
-    const el = containerRef.current as HTMLDivElement | null;
-    if (!el) return;
-
-    const onKey: EventListener = (e) => {
-      const ke = e as KeyboardEvent;
-      if (ke.key === "ArrowRight") { ke.preventDefault(); next(); }
-      else if (ke.key === "ArrowLeft") { ke.preventDefault(); prev(); }
-    };
-
-    el.addEventListener("keydown", onKey);
-    return () => el.removeEventListener("keydown", onKey);
-  }, [next, prev]);
-
-  if (reducedMotion || total === 0) {
-    return (
-      <div className="relative rounded-2xl overflow-hidden border border-white/10 ring-1 ring-white/10">
-        {badge ? (
-          <div className="absolute left-3 top-3 z-20 rounded-full bg-white text-black text-xs font-semibold px-2 py-1 shadow">
-            {badge}
-          </div>
-        ) : null}
-        <img src={poster} alt="" className="w-full h-full aspect-[16/9] object-cover" />
-      </div>
-    );
-  }
-
-  const offsetPx = (offsetPct / 100) * containerW;
-  const trackStyle: React.CSSProperties = {
-    transform: `translate3d(${offsetPx}px,0,0)`,
-    willChange: "transform",
-    transition: transitionOn ? `transform ${DURATION}ms cubic-bezier(.22,.61,.36,1)` : "none",
-    backgroundColor: "black",
-  };
-
-  const brandBgStyle: React.CSSProperties = {
-    transform: `translate3d(${offsetPx / 2}px,0,0)`,
-    transition: transitionOn ? `transform ${DURATION}ms cubic-bezier(.22,.61,.36,1)` : "none",
-    backgroundImage: `radial-gradient(ellipse at center, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%), url(${kaizenLogo})`,
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "center",
-    backgroundSize: "40% auto",
-    opacity: 0.14,
-    pointerEvents: "none",
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      tabIndex={0}
-      aria-label="Hero product video"
-      className="group relative rounded-2xl overflow-hidden border border-white/10 ring-1 ring-white/10 shadow-[0_10px_45px_rgba(0,0,0,0.45)] outline-none bg-black"
-      style={{ backfaceVisibility: "hidden", WebkitFontSmoothing: "antialiased" }}
-    >
-      <div className="absolute inset-0 z-0" style={brandBgStyle} aria-hidden />
-      <div className="relative z-10 flex" style={trackStyle}>
-        <div className="shrink-0 basis-full">
-          <video
-            key={`prev-${videos[prevIdx]}`}
-            className="w-full h-full aspect-[16/9] object-cover block"
-            autoPlay muted playsInline controls={false} preload="metadata" poster={poster}
-          >
-            <source src={videos[prevIdx]} type="video/mp4" />
-          </video>
-        </div>
-        <div className="shrink-0 basis-full">
-          <video
-            key={`current-${videos[idx]}`}
-            ref={currentRef}
-            className="w-full h-full aspect-[16/9] object-cover block"
-            autoPlay muted loop={false} playsInline controls={false} preload="metadata" poster={poster}
-            onEnded={() => next()}
-          >
-            <source src={videos[idx]} type="video/mp4" />
-          </video>
-        </div>
-        <div className="shrink-0 basis-full">
-          <video
-            key={`next-${videos[(idx + 1) % total]}`}
-            className="w-full h-full aspect-[16/9] object-cover block"
-            autoPlay muted playsInline controls={false} preload="metadata" poster={poster}
-          >
-            <source src={videos[(idx + 1) % total]} type="video/mp4" />
-          </video>
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-20 z-20 bg-gradient-to-r from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-20 z-20 bg-gradient-to-l from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-      <div className="absolute inset-0 z-30 flex items-center justify-between px-2">
-        <HeroNavButton label="Previous" icon={<ChevronLeft size={18} />} onClick={() => prev()} side="left" />
-        <HeroNavButton label="Next" icon={<ChevronRight size={18} />} onClick={() => next()} side="right" />
-      </div>
-    </div>
-  );
-}
-
-function HeroNavButton({
-  label, icon, onClick, side,
-}: { label: string; icon: React.ReactNode; onClick: () => void; side: "left" | "right" }) {
-  return (
-    <div
-      className={[
-        "relative",
-        side === "left" ? "justify-self-start" : "justify-self-end",
-        "opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-150",
-      ].join(" ")}
-    >
-      <button
-        type="button"
-        onClick={onClick}
-        className={[
-          "peer inline-flex items-center justify-center h-12 w-12 rounded-full",
-          "bg-white/90 text-black shadow-lg ring-1 ring-black/5 backdrop-blur",
-          "transition-all duration-200 hover:scale-105 hover:shadow-xl hover:ring-black/10 active:scale-95",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
-        ].join(" ")}
-        aria-label={label}
-      >
-        {icon}
-      </button>
-      <div
-        className={[
-          "pointer-events-none absolute top-full mt-2 px-2 py-1 rounded-lg text-xs font-medium",
-          "text-black bg-white/95 shadow ring-1 ring-black/5",
-          "opacity-0 peer-hover:opacity-100 peer-focus:opacity-100 transition-opacity duration-150",
-          side === "left" ? "left-0" : "right-0",
-        ].join(" ")}
-      >
-        {label}
-      </div>
     </div>
   );
 }

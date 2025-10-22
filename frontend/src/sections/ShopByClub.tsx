@@ -1,28 +1,88 @@
+// src/sections/ShopByClub.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /* ---------------- Types ---------------- */
-export type Team = { name: string; slug: string; logo?: string };
+export type Team = {
+  name: string;
+  slug: string;
+  logo?: string;
+  /** Exact filter value you want in /shop?team=... */
+  teamValue?: string;
+  /** Optional badge chip to nudge clicks */
+  badge?: "Hot" | "New Drop" | "Trending" | string;
+};
 
 type ShopByClubProps = {
   teams?: Team[];
-  onSelect?: (team: Team) => void; // ← exposed so Home can pass it
+  onSelect?: (team: Team) => void; // optional, fires after navigation
 };
 
-/* ---------------- Defaults ---------------- */
+/* ---------------- Defaults (your chosen 9, in order) ---------------- */
 const TEAMS_DEFAULT: Team[] = [
-  { name: "Real Madrid", slug: "real-madrid", logo: "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg" },
-  { name: "FC Barcelona", slug: "barcelona", logo: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" },
-  { name: "Manchester City", slug: "man-city", logo: "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg" },
-  { name: "Liverpool", slug: "liverpool", logo: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg" },
-  { name: "Paris Saint-Germain", slug: "psg", logo: "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" },
-  { name: "Bayern Munich", slug: "bayern", logo: "https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_München_logo_%282017%29.svg" },
-  { name: "Inter", slug: "inter", logo: "https://upload.wikimedia.org/wikipedia/en/0/0b/FC_Internazionale_Milano_2021.svg" },
-  { name: "AC Milan", slug: "ac-milan", logo: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.svg" },
-  { name: "Juventus", slug: "juventus", logo: "https://upload.wikimedia.org/wikipedia/commons/1/15/Juventus_FC_2017_logo.svg" },
-  { name: "Arsenal", slug: "arsenal", logo: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" },
-  { name: "Chelsea", slug: "chelsea", logo: "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg" },
-  { name: "Al Nassr", slug: "al-nassr", logo: "https://upload.wikimedia.org/wikipedia/en/1/15/Al_Nassr_FC_Logo.svg" },
+  {
+    name: "Real Madrid",
+    slug: "real-madrid",
+    teamValue: "Real Madrid",
+    logo: "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg",
+    badge: "Hot",
+  },
+  {
+    name: "FC Barcelona",
+    slug: "barcelona",
+    teamValue: "FC Barcelona",
+    logo:
+      "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
+    badge: "Trending",
+  },
+  {
+    name: "Manchester United",
+    slug: "man-united",
+    teamValue: "Manchester United",
+    logo:
+      "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg",
+  },
+  {
+    name: "Bayern Munich",
+    slug: "bayern",
+    teamValue: "FC Bayern Munich",
+    logo:
+      "https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_München_logo_%282017%29.svg",
+  },
+  {
+    name: "Liverpool",
+    slug: "liverpool",
+    teamValue: "Liverpool",
+    logo: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
+  },
+  {
+    name: "Manchester City",
+    slug: "man-city",
+    teamValue: "Manchester City",
+    logo:
+      "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
+  },
+  {
+    name: "Paris Saint-Germain",
+    slug: "psg",
+    teamValue: "Paris Saint-Germain",
+    logo:
+      "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg",
+    badge: "New Drop",
+  },
+  {
+    name: "Arsenal",
+    slug: "arsenal",
+    teamValue: "Arsenal",
+    logo: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
+  },
+  {
+    name: "AC Milan",
+    slug: "ac-milan",
+    teamValue: "AC Milan",
+    logo:
+      "https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.svg",
+  },
 ];
 
 /* ---------------- Colors ---------------- */
@@ -35,11 +95,20 @@ const ACCENTS: Array<[string, string]> = [
 ];
 
 /* ---------------- Helpers ---------------- */
-function sanitizeTeams(list: Team[]) {
-  return list.filter((t) => typeof t.logo === "string" && t.logo.trim().length > 0);
+const sanitizeTeams = (list: Team[]) =>
+  list.filter((t) => typeof t.logo === "string" && t.logo.trim().length > 0);
+
+/* ---------------- Badge chip ---------------- */
+function Badge({ label }: { label?: string }) {
+  if (!label) return null;
+  return (
+    <span className="pointer-events-none absolute left-3 top-3 z-10 select-none rounded-full bg-white text-black px-2 py-0.5 text-[10px] font-extrabold tracking-wide shadow">
+      {label}
+    </span>
+  );
 }
 
-/* ---------------- ClubCard ---------------- */
+/* ---------------- ClubCard (wrapped in <a>) ---------------- */
 function ClubCard({
   team,
   from,
@@ -58,14 +127,14 @@ function ClubCard({
   const [ok, setOk] = useState(true);
   if (!ok) return null;
 
-  const handleClick = () => onSelect?.(team);
+  const teamQuery = team.teamValue ?? team.name;
+  const href = `/shop?team=${encodeURIComponent(teamQuery)}`;
 
   return (
-    <div
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleClick()}
+    <a
+      href={href}
+      aria-label={`View ${team.name} products`}
+      onClick={() => onSelect?.(team)}
       className={[
         "group relative shrink-0 snap-start",
         "rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur",
@@ -74,16 +143,19 @@ function ClubCard({
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
         "cursor-pointer",
       ].join(" ")}
-      style={{ width: sizePx, borderRadius: radiusPx }}
+      style={{ width: `${sizePx}px`, borderRadius: `${radiusPx}px` }}
     >
-      {/* Animated rim */}
+      <Badge label={team.badge} />
+
+      {/* Animated rim (pointer-events: none so it won't block clicks) */}
       <div
         aria-hidden
         className="absolute inset-0 rounded-[inherit] pointer-events-none"
         style={{
           padding: 2,
           background: `conic-gradient(from 0deg, ${from}, ${to}, ${from})`,
-          WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+          WebkitMask:
+            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
           animation: "spin 7s linear infinite",
@@ -91,7 +163,7 @@ function ClubCard({
       />
       <style>{`@keyframes spin{to{transform: rotate(1turn);}}`}</style>
 
-      {/* Logo-only square */}
+      {/* Logo square */}
       <div
         className="relative overflow-hidden"
         style={{
@@ -101,17 +173,15 @@ function ClubCard({
             "radial-gradient(110% 85% at 50% 65%, rgba(255,255,255,0.10), rgba(255,255,255,0) 70%), #0a0a0a",
         }}
       >
-        {/* highlight */}
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
-            background: "linear-gradient(-20deg, rgba(255,255,255,0.08), rgba(255,255,255,0) 35%)",
+            background:
+              "linear-gradient(-20deg, rgba(255,255,255,0.08), rgba(255,255,255,0) 35%)",
             mixBlendMode: "screen",
           }}
         />
-
-        {/* Centered logo */}
         <div className="absolute inset-0 grid place-items-center p-7">
           <img
             src={team.logo!}
@@ -120,20 +190,52 @@ function ClubCard({
             decoding="async"
             className="max-h-[78%] max-w-[78%] object-contain transition-transform duration-300 group-hover:scale-[1.05]"
             onError={() => setOk(false)}
+            draggable={false}
           />
         </div>
-
-        {/* inner ring */}
         <span className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/10" />
       </div>
-    </div>
+    </a>
   );
 }
 
-/* ---------------- Edge button ---------------- */
+/* ---------------- “More Clubs” card ---------------- */
+function MoreCard({ sizePx, radiusPx }: { sizePx: number; radiusPx: number }) {
+  return (
+    <a
+      href="/shop"
+      aria-label="View more clubs"
+      className={[
+        "group relative shrink-0 snap-start",
+        "grid place-items-center",
+        "rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur",
+        "transition-all duration-300 ease-[cubic-bezier(.22,.61,.36,1)]",
+        "hover:bg-white/[0.06] hover:border-white/20",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+        "cursor-pointer",
+      ].join(" ")}
+      style={{ width: `${sizePx}px`, borderRadius: `${radiusPx}px`, aspectRatio: "1 / 1" }}
+    >
+      <div className="text-center">
+        <div className="text-sm font-bold text-white/90">More Clubs</div>
+        <div className="mt-1 text-xs text-white/60">Browse all →</div>
+      </div>
+    </a>
+  );
+}
+
+/* ---------------- Edge button (desktop only) ---------------- */
 function EdgeBtn({
-  children, onClick, ariaLabel, hidden,
-}: { children: React.ReactNode; onClick: () => void; ariaLabel: string; hidden?: boolean }) {
+  children,
+  onClick,
+  ariaLabel,
+  hidden,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  ariaLabel: string;
+  hidden?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -152,14 +254,41 @@ function EdgeBtn({
 }
 
 /* ---------------- Main Section ---------------- */
-export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByClubProps) {
+export default function ShopByClub({
+  teams = TEAMS_DEFAULT,
+  onSelect,
+}: ShopByClubProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
 
-  const CARD = useMemo(() => ({ size: 360, radius: 30 }), []);
-  const hideScrollbarStyle: React.CSSProperties = { msOverflowStyle: "none", scrollbarWidth: "none" };
+  // responsive card sizing (container-aware)
+  const [cardSize, setCardSize] = useState(300);
+  const [cardRadius, setCardRadius] = useState(26);
+
+  const hideScrollbarStyle: React.CSSProperties = {
+    msOverflowStyle: "none",
+    scrollbarWidth: "none",
+  };
   const cleanTeams = useMemo(() => sanitizeTeams(teams), [teams]);
+
+  // pointer type (live) — hide buttons on coarse pointers (mobile)
+  const [isCoarsePointer, setIsCoarsePointer] = useState<boolean>(
+    () =>
+      (typeof window !== "undefined" &&
+        window.matchMedia?.("(pointer: coarse)")?.matches) ||
+      false
+  );
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(pointer: coarse)");
+    const update = () => setIsCoarsePointer(mq.matches);
+    mq.addEventListener?.("change", update);
+    update();
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
 
   const updateEdges = () => {
     const el = trackRef.current;
@@ -168,12 +297,12 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByCl
     setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   };
 
+  // wheel→horizontal + edges + (desktop) drag (ignore pointer starting on links)
   useEffect(() => {
     updateEdges();
     const el = trackRef.current;
     if (!el) return;
 
-    // wheel → horizontal
     const onWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
         el.scrollBy({ left: e.deltaY, behavior: "auto" });
@@ -181,26 +310,21 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByCl
       }
     };
     const onScroll = () => updateEdges();
-    const ro = new ResizeObserver(updateEdges);
 
     el.addEventListener("wheel", onWheel, { passive: false });
     el.addEventListener("scroll", onScroll, { passive: true });
-    ro.observe(el);
 
-    return () => {
-      el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("scroll", onScroll);
-      ro.disconnect();
-    };
-  }, []);
-
-  // drag-to-scroll
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    let down = false, startX = 0, startLeft = 0;
+    let down = false,
+      startX = 0,
+      startLeft = 0;
+    let startedOnLink = false;
 
     const d = (e: PointerEvent) => {
+      if (isCoarsePointer) return;
+      const target = e.target as Element | null;
+      startedOnLink = !!target?.closest("a");
+      if (startedOnLink) return;
+
       down = true;
       startX = e.clientX;
       startLeft = el.scrollLeft;
@@ -212,6 +336,7 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByCl
       el.scrollLeft = startLeft - (e.clientX - startX);
     };
     const u = (e: PointerEvent) => {
+      if (!down) return;
       down = false;
       el.releasePointerCapture(e.pointerId);
       el.classList.remove("cursor-grabbing");
@@ -221,23 +346,56 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByCl
     el.addEventListener("pointermove", m);
     el.addEventListener("pointerup", u);
     el.addEventListener("pointercancel", u);
+
+    const ro = new ResizeObserver(updateEdges);
+    ro.observe(el);
+
     return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("scroll", onScroll);
       el.removeEventListener("pointerdown", d);
       el.removeEventListener("pointermove", m);
       el.removeEventListener("pointerup", u);
       el.removeEventListener("pointercancel", u);
+      ro.disconnect();
     };
+  }, [isCoarsePointer]);
+
+  // container-aware card size
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      let size = 0;
+      if (w < 420) size = Math.max(200, Math.min(260, Math.floor(w * 0.7)));
+      else if (w < 640) size = Math.max(220, Math.min(280, Math.floor(w * 0.6)));
+      else if (w < 900) size = Math.max(260, Math.min(320, Math.floor(w * 0.42)));
+      else if (w < 1200) size = Math.max(300, Math.min(340, Math.floor(w * 0.32)));
+      else size = 340;
+
+      setCardSize(size);
+      setCardRadius(Math.round(size * 0.08) + 18);
+      updateEdges();
+    });
+
+    ro.observe(wrap);
+    return () => ro.disconnect();
   }, []);
 
   const scrollByAmount = (dir: "left" | "right") => {
     const el = trackRef.current;
     if (!el) return;
-    const amount = Math.round(el.clientWidth * 0.9);
+    const amount = Math.round((cardSize + 24) * (el.clientWidth < 640 ? 1.1 : 2));
     el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
 
   return (
-    <section aria-label="Popular Teams" className="relative border-t border-white/10 bg-neutral-950">
+    <section
+      aria-label="Popular Teams"
+      className="relative border-t border-white/10 bg-neutral-950"
+    >
       {/* background */}
       <div
         aria-hidden
@@ -245,26 +403,39 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByCl
         style={{
           background:
             "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,.65) 100%), repeating-linear-gradient(-24deg, rgba(255,255,255,0.05) 0 10px, rgba(255,255,255,0) 10px 28px)",
-          maskImage: "radial-gradient(120% 85% at 50% 15%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
+          maskImage:
+            "radial-gradient(120% 85% at 50% 15%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)",
         }}
       />
 
-      <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-        <div className="relative mt-5">
+      <div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16"
+        ref={wrapRef}
+      >
+        <div className="relative mt-2">
           {/* gradient edges */}
-          <div className={`pointer-events-none absolute inset-y-0 left-0 w-28 z-10 transition-opacity ${canPrev ? "opacity-100" : "opacity-0"} bg-gradient-to-r from-neutral-950 to-transparent`} />
-          <div className={`pointer-events-none absolute inset-y-0 right-0 w-28 z-10 transition-opacity ${canNext ? "opacity-100" : "opacity-0"} bg-gradient-to-l from-neutral-950 to-transparent`} />
+          <div
+            className={`pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-24 z-10 transition-opacity ${
+              canPrev ? "opacity-100" : "opacity-0"
+            } bg-gradient-to-r from-neutral-950 to-transparent`}
+          />
+          <div
+            className={`pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-24 z-10 transition-opacity ${
+              canNext ? "opacity-100" : "opacity-0"
+            } bg-gradient-to-l from-neutral-950 to-transparent`}
+          />
 
-          {/* Track */}
+          {/* Track — snap & swipe/drag */}
           <div
             ref={trackRef}
             tabIndex={0}
-            className={["flex gap-6 overflow-x-auto snap-x scroll-px-8 outline-none select-none", "cursor-grab", "scrollbar-none"].join(" ")}
+            className={[
+              "flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scroll-px-6 sm:scroll-px-8 outline-none select-none",
+              "cursor-grab",
+              "scrollbar-none",
+              "p-1",
+            ].join(" ")}
             style={{ ...hideScrollbarStyle, scrollBehavior: "smooth" }}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowRight") scrollByAmount("right");
-              if (e.key === "ArrowLeft") scrollByAmount("left");
-            }}
           >
             {cleanTeams.map((t, i) => {
               const [from, to] = ACCENTS[i % ACCENTS.length];
@@ -274,27 +445,40 @@ export default function ShopByClub({ teams = TEAMS_DEFAULT, onSelect }: ShopByCl
                   team={t}
                   from={from}
                   to={to}
-                  sizePx={CARD.size}
-                  radiusPx={CARD.radius}
+                  sizePx={cardSize}
+                  radiusPx={Math.max(20, cardRadius)}
                   onSelect={onSelect}
                 />
               );
             })}
+
+            {/* "More Clubs" tile */}
+            <MoreCard sizePx={cardSize} radiusPx={Math.max(20, cardRadius)} />
           </div>
 
-          {/* Side chevrons overlay */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 md:px-3">
-            <div className="pointer-events-auto">
-              <EdgeBtn hidden={!canPrev} onClick={() => scrollByAmount("left")} ariaLabel="Previous">
-                <ChevronLeft size={18} />
-              </EdgeBtn>
+          {/* Desktop-only chevrons */}
+          {!isCoarsePointer && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-1 sm:px-2 md:px-3">
+              <div className="pointer-events-auto">
+                <EdgeBtn
+                  hidden={!canPrev}
+                  onClick={() => scrollByAmount("left")}
+                  ariaLabel="Previous"
+                >
+                  <ChevronLeft size={18} />
+                </EdgeBtn>
+              </div>
+              <div className="pointer-events-auto">
+                <EdgeBtn
+                  hidden={!canNext}
+                  onClick={() => scrollByAmount("right")}
+                  ariaLabel="Next"
+                >
+                  <ChevronRight size={18} />
+                </EdgeBtn>
+              </div>
             </div>
-            <div className="pointer-events-auto">
-              <EdgeBtn hidden={!canNext} onClick={() => scrollByAmount("right")} ariaLabel="Next">
-                <ChevronRight size={18} />
-              </EdgeBtn>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

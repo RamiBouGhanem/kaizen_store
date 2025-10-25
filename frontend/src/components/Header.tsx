@@ -268,7 +268,7 @@ function QuickShop() {
               <Link
                 key={club}
                 to="/shop"
-                search={{ team: club }} 
+                search={{ team: club }}
                 className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 hover:bg-white/10 transition group flex items-center justify-between"
               >
                 <span className="truncate">{club}</span>
@@ -621,20 +621,19 @@ export default function Header({
               </div>
               <div className="px-3 pb-3 grid grid-cols-2 gap-2">
                 {TOP_CLUBS.map((club) => (
-                 <Link
-  key={club}
-  to="/shop"
-  search={{ team: club } as any} // if your /shop route defines { team?: string }, you can drop "as any"
-  onClick={() => setOpen(false)}
-  className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 hover:bg-white/10 transition group flex items-center justify-between"
->
-  <span className="truncate">{club}</span>
-  <ChevronRight
-    size={16}
-    className="text-white/60 group-hover:translate-x-0.5 transition shrink-0"
-  />
-</Link>
-
+                  <Link
+                    key={club}
+                    to="/shop"
+                    search={{ team: club } as any} // if your /shop route defines { team?: string }, you can drop "as any"
+                    onClick={() => setOpen(false)}
+                    className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 hover:bg-white/10 transition group flex items-center justify-between"
+                  >
+                    <span className="truncate">{club}</span>
+                    <ChevronRight
+                      size={16}
+                      className="text-white/60 group-hover:translate-x-0.5 transition shrink-0"
+                    />
+                  </Link>
                 ))}
               </div>
             </div>

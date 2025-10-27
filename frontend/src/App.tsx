@@ -40,13 +40,8 @@ const ShopRoute = createRoute({
   }) => search,
 });
 
-
-// Build the tree (remove any you don't need)
-const routeTree = RootRoute.addChildren([
-  HomeRoute,
-  AboutRoute,
-  ShopRoute
-]);
+// Build the tree
+const routeTree = RootRoute.addChildren([HomeRoute, AboutRoute, ShopRoute]);
 
 const router = createRouter({ routeTree });
 
@@ -60,16 +55,3 @@ declare module "@tanstack/react-router" {
 export default function App() {
   return <RouterProvider router={router} />;
 }
-
-
-
-// COMING SOON PAGE
-// import ComingSoon from "./pages/ComingSoon"; // <--- Import the new page
-
-// function App() {
-//   return (
-//     <ComingSoon /> 
-//   );
-// }
-
-// export default App;

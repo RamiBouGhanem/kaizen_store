@@ -3,6 +3,7 @@ import React from "react";
 import Header from "../components/Header";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import footballTshirt from "../assets/football-tshirt.jpeg";
+import { useSearch } from "@tanstack/react-router";
 
 /* ================== Types ================== */
 type ApiProduct = {
@@ -40,7 +41,6 @@ const toAbs = (apiBase: string, img?: string | null) => {
     return s;
   }
 };
-;
 
 const mapApiToItems = (list: ApiProduct[], apiBase: string): FeaturedItem[] =>
   (list ?? []).map((p) => {
@@ -312,25 +312,46 @@ function teamMatches(selected: string, value?: string): boolean {
 
 /* ================== Page ================== */
 export default function Shop() {
-  // NOTE: VITE_API_URL must include /api (e.g. http://localhost:4000/api)
+  // Router-provided search (from /shop?team=..., etc.)
+  const routeSearch = useSearch({ from: "/shop" }) as {
+    team?: string;
+    kitType?: string;
+    season?: string;
+    q?: string;
+    sort?: string;
+  };
+
+  // NOTE: VITE_API_URL must include /api (e.g. https://.../api)
   const api = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
-  const initial = React.useMemo(() => {
-    if (typeof window === "undefined") return new URLSearchParams("");
-    return new URLSearchParams(window.location.search);
-  }, []);
-
-  // Filters
-  const [q, setQ] = React.useState(initial.get("q") ?? "");
-  const [team, setTeam] = React.useState(
-    initial.get("team") ?? initial.get("club") ?? ""
-  );
-  const [kitType, setKitType] = React.useState(initial.get("kitType") ?? "");
-  const [season, setSeason] = React.useState(initial.get("season") ?? "");
+  // Initialize local UI state from router search (not window.location)
+  const [q, setQ] = React.useState(routeSearch.q ?? "");
+  const [team, setTeam] = React.useState(routeSearch.team ?? "");
+  const [kitType, setKitType] = React.useState(routeSearch.kitType ?? "");
+  const [season, setSeason] = React.useState(routeSearch.season ?? "");
   const [sortParam, setSortParam] = React.useState(
-    initial.get("sort") ?? "title:asc"
+    routeSearch.sort ?? "title:asc"
   );
   const dq = useDebounced(q, 120);
+
+  // Keep local state in sync if URL search changes (e.g., coming from Home CTA)
+  React.useEffect(() => {
+    if ((routeSearch.q ?? "") !== q) setQ(routeSearch.q ?? "");
+    if ((routeSearch.team ?? "") !== team) setTeam(routeSearch.team ?? "");
+    if ((routeSearch.kitType ?? "") !== kitType)
+      setKitType(routeSearch.kitType ?? "");
+    if ((routeSearch.season ?? "") !== season)
+      setSeason(routeSearch.season ?? "");
+    if ((routeSearch.sort ?? "title:asc") !== sortParam)
+      setSortParam(routeSearch.sort ?? "title:asc");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    routeSearch.q,
+    routeSearch.team,
+    routeSearch.kitType,
+    routeSearch.season,
+    routeSearch.sort,
+  ]);
 
   // UI
   const [openFilters, setOpenFilters] = React.useState(false);
@@ -349,17 +370,18 @@ export default function Shop() {
     }
     const ctrl = new AbortController();
 
-    // ensure trailing slash; use relative path so '/api' is preserved
     const run = async () => {
       try {
         setLoading(true);
         setErr(null);
         const base = api.endsWith("/") ? api : api + "/";
-        const url = new URL("products", base); // <-- NO leading slash
+        const url = new URL("products", base); // <-- NO leading slash; preserves /api
         url.searchParams.set("page", "1");
         url.searchParams.set("limit", "9999");
         url.searchParams.set("sort", "createdAt:desc");
-        const res = await fetch(url.toString(), { signal: ctrl.signal });
+        const href = url.toString();
+        // console.log("Fetch products →", href); // helpful while debugging
+        const res = await fetch(href, { signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const arr: ApiProduct[] = Array.isArray(data)
@@ -435,6 +457,7 @@ export default function Shop() {
     return withScores.map((x) => x.it);
   }, [raw, dq, team, kitType, season, sortParam]);
 
+  // Keep URL updated as filters/search change (so share/back/forward work)
   React.useEffect(() => {
     setSearchParam("q", q || null);
   }, [q]);

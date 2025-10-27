@@ -31,6 +31,13 @@ const ShopRoute = createRoute({
   getParentRoute: () => RootRoute,
   path: "/shop",
   component: Shop,
+  validateSearch: (search: {
+    team?: string;
+    kitType?: string;
+    season?: string;
+    q?: string;
+    sort?: string;
+  }) => search,
 });
 
 

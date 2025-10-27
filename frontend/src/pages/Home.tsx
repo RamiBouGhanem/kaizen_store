@@ -305,23 +305,23 @@ export default function Home() {
 
                 {/* CTA -> /shop?team=... */}
                 <div className="fade-rise d3 mt-5 flex items-center justify-center">
-                 <Link
-  to={`/shop?team=${encodeURIComponent(
-    SLIDES[idx].teamValue ?? SLIDES[idx].name
-  )}`}
-  className={[
-    "cta-anim inline-flex h-10 items-center justify-center rounded-full px-4 sm:px-5",
-    "text-[0.9rem] font-bold text-neutral-900 shadow-[0_18px_40px_-18px_rgba(255,255,255,.55)]",
-    "focus:outline-none focus:ring-2 focus:ring-white/70",
-    "bg-gradient-to-r",
-    SLIDES[idx].ctaGradient,
-  ].join(" ")}
-  aria-label={`Shop ${SLIDES[idx].name} now`}
->
-  Shop Now
-  <ChevronRight className="ml-1.5" size={16} />
-</Link>
-
+                  <Link
+                    to="/shop"
+                    search={{
+                      team: SLIDES[idx].teamValue ?? SLIDES[idx].name,
+                    }}
+                    className={[
+                      "cta-anim inline-flex h-10 items-center justify-center rounded-full px-4 sm:px-5",
+                      "text-[0.9rem] font-bold text-neutral-900 shadow-[0_18px_40px_-18px_rgba(255,255,255,.55)]",
+                      "focus:outline-none focus:ring-2 focus:ring-white/70",
+                      "bg-gradient-to-r",
+                      SLIDES[idx].ctaGradient,
+                    ].join(" ")}
+                    aria-label={`Shop ${SLIDES[idx].name} now`}
+                  >
+                    Shop Now
+                    <ChevronRight className="ml-1.5" size={16} />
+                  </Link>
                 </div>
 
                 {/* Dots */}

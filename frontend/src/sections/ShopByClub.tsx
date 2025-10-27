@@ -1,6 +1,7 @@
 // src/sections/ShopByClub.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 /* ---------------- Types ---------------- */
 export type Team = {
@@ -108,7 +109,7 @@ function Badge({ label }: { label?: string }) {
   );
 }
 
-/* ---------------- ClubCard (wrapped in <a>) ---------------- */
+/* ---------------- ClubCard (wrapped in TanStack <Link>) ---------------- */
 function ClubCard({
   team,
   from,
@@ -128,11 +129,11 @@ function ClubCard({
   if (!ok) return null;
 
   const teamQuery = team.teamValue ?? team.name;
-  const href = `/shop?team=${encodeURIComponent(teamQuery)}`;
 
   return (
-    <a
-      href={href}
+    <Link
+      to="/shop"
+      search={{ team: teamQuery }}
       aria-label={`View ${team.name} products`}
       onClick={() => onSelect?.(team)}
       className={[
@@ -195,15 +196,15 @@ function ClubCard({
         </div>
         <span className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/10" />
       </div>
-    </a>
+    </Link>
   );
 }
 
 /* ---------------- “More Clubs” card ---------------- */
 function MoreCard({ sizePx, radiusPx }: { sizePx: number; radiusPx: number }) {
   return (
-    <a
-      href="/shop"
+    <Link
+      to="/shop"
       aria-label="View more clubs"
       className={[
         "group relative shrink-0 snap-start",
@@ -214,13 +215,17 @@ function MoreCard({ sizePx, radiusPx }: { sizePx: number; radiusPx: number }) {
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
         "cursor-pointer",
       ].join(" ")}
-      style={{ width: `${sizePx}px`, borderRadius: `${radiusPx}px`, aspectRatio: "1 / 1" }}
+      style={{
+        width: `${sizePx}px`,
+        borderRadius: `${radiusPx}px`,
+        aspectRatio: "1 / 1",
+      }}
     >
       <div className="text-center">
         <div className="text-sm font-bold text-white/90">More Clubs</div>
         <div className="mt-1 text-xs text-white/60">Browse all →</div>
       </div>
-    </a>
+    </Link>
   );
 }
 
@@ -322,7 +327,7 @@ export default function ShopByClub({
     const d = (e: PointerEvent) => {
       if (isCoarsePointer) return;
       const target = e.target as Element | null;
-      startedOnLink = !!target?.closest("a");
+      startedOnLink = !!target?.closest("a, [data-link]");
       if (startedOnLink) return;
 
       down = true;

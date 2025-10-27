@@ -9,7 +9,7 @@ function ensureDir(dir: string) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
-const dest = join(process.cwd(), 'src', 'uploads', 'products'); // TEMP if you insist on src/
+const dest = join(process.cwd(), 'uploads', 'products'); // <= outside src/
 ensureDir(dest);
 
 @Controller('admin/uploads')
@@ -28,12 +28,12 @@ export class UploadsController {
         const ok = /image\/(png|jpe?g|webp|avif)/i.test(file.mimetype);
         cb(ok ? null : new Error('Invalid image type'), ok);
       },
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+      limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
   async upload(@UploadedFiles() files: Array<Express.Multer.File>) {
-    // Return relative URLs that the frontend will resolve against VITE_API_URL
-    const paths = (files ?? []).map((f) => `uploads/products/${f.filename}`);
+    // return "uploads/<file>" so final URL is: `${VITE_API_URL}/uploads/<file>`
+    const paths = (files ?? []).map((f) => `uploads/${f.filename}`);
     return { ok: true, data: { files: paths } };
   }
 }

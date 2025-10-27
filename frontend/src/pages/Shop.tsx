@@ -25,21 +25,28 @@ type FeaturedItem = {
   badge?: string;
 };
 
-/* ================== Helpers ================== */
 const toAbs = (apiBase: string, img?: string | null) => {
   if (!img) return "";
-  const s = String(img).trim().replace(/^\.?\/*/, "");
+  // clean leading slashes and collapse legacy "uploads/products/" -> "uploads/"
+  let s = String(img).trim().replace(/^\.?\/*/, "");
+  s = s.replace(/^uploads\/products\//i, "uploads/");
+
   if (/^https?:\/\//i.test(s)) return s;
+
   try {
-    return new URL(s, apiBase).toString();
+    const base = apiBase.endsWith("/") ? apiBase : apiBase + "/";
+    return new URL(s, base).toString(); // -> `${VITE_API_URL}/uploads/<file>`
   } catch {
     return s;
   }
 };
+;
 
 const mapApiToItems = (list: ApiProduct[], apiBase: string): FeaturedItem[] =>
   (list ?? []).map((p) => {
-    const imgs = (Array.isArray(p.images) ? p.images : []).map((s) => toAbs(apiBase, s));
+    const imgs = (Array.isArray(p.images) ? p.images : []).map((s) =>
+      toAbs(apiBase, s)
+    );
     return {
       id: String(p._id),
       title: p.title,
@@ -76,7 +83,10 @@ function useReveal<T extends HTMLElement>(opts?: IntersectionObserverInit) {
     const el = ref.current;
     if (!el || shown) return;
     const io = new IntersectionObserver(
-      (es) => es.forEach((e) => e.isIntersecting && (setShown(true), io.disconnect())),
+      (es) =>
+        es.forEach(
+          (e) => e.isIntersecting && (setShown(true), io.disconnect())
+        ),
       { threshold: 0.15, rootMargin: "0px 0px -6% 0px", ...(opts || {}) }
     );
     io.observe(el);
@@ -124,25 +134,56 @@ const SYNONYMS: Record<string, string[]> = {
 const TEAM_ALIASES: Record<string, string[]> = {
   "real madrid": ["realmadrid", "rm", "real"],
   "fc barcelona": ["barcelona", "barça", "barca", "fcb"],
-  "fc bayern münchen": ["fc bayern munchen", "bayern munich", "bayern", "fcbayern", "munich", "muenchen", "münchen"],
-  "manchester city": ["man city", "mcfc", "city", "man city fc", "manchester city fc"],
-  "manchester united": ["man united", "man utd", "manutd", "mu", "united", "manchester united fc"],
+  "fc bayern münchen": [
+    "fc bayern munchen",
+    "bayern munich",
+    "bayern",
+    "fcbayern",
+    "munich",
+    "muenchen",
+    "münchen",
+  ],
+  "manchester city": [
+    "man city",
+    "mcfc",
+    "city",
+    "man city fc",
+    "manchester city fc",
+  ],
+  "manchester united": [
+    "man united",
+    "man utd",
+    "manutd",
+    "mu",
+    "united",
+    "manchester united fc",
+  ],
   "paris saint-germain": ["psg", "paris sg", "paris saint germain"],
-  "juventus": ["juve", "juventus fc"],
+  juventus: ["juve", "juventus fc"],
   "ac milan": ["milan", "acm", "ac milan fc"],
-  "inter milan": ["inter", "internazionale", "fc internazionale", "inter milano", "inter milan fc"],
+  "inter milan": [
+    "inter",
+    "internazionale",
+    "fc internazionale",
+    "inter milano",
+    "inter milan fc",
+  ],
   "borussia dortmund": ["bvb", "dortmund"],
   "tottenham hotspur": ["spurs", "tottenham"],
-  "liverpool": ["lfc", "liverpool fc"],
-  "chelsea": ["cfc", "chelsea fc"],
-  "arsenal": ["afc", "gunners", "arsenal fc"],
-  "atlético madrid": ["atletico madrid", "atleti", "atlético", "atletico", "atlético de madrid"],
+  liverpool: ["lfc", "liverpool fc"],
+  chelsea: ["cfc", "chelsea fc"],
+  arsenal: ["afc", "gunners", "arsenal fc"],
+  "atlético madrid": [
+    "atletico madrid",
+    "atleti",
+    "atlético",
+    "atletico",
+    "atlético de madrid",
+  ],
 };
 
-// Normalize once
 const normTeam = (s: string) => normalize(s);
 
-// Expand a team name into canonical + aliases (normalized)
 function expandTeamName(name: string): Set<string> {
   const base = normTeam(name);
   const out = new Set<string>([base]);
@@ -161,16 +202,26 @@ function expandTeamName(name: string): Set<string> {
 // Tiny Levenshtein (<=1)
 function editDistance1orLess(a: string, b: string) {
   if (a === b) return true;
-  const la = a.length, lb = b.length;
+  const la = a.length,
+    lb = b.length;
   if (Math.abs(la - lb) > 1) return false;
-  let i = 0, j = 0, edits = 0;
+  let i = 0,
+    j = 0,
+    edits = 0;
   while (i < la && j < lb) {
-    if (a[i] === b[j]) { i++; j++; continue; }
+    if (a[i] === b[j]) {
+      i++;
+      j++;
+      continue;
+    }
     edits++;
     if (edits > 1) return false;
     if (la > lb) i++;
     else if (lb > la) j++;
-    else { i++; j++; }
+    else {
+      i++;
+      j++;
+    }
   }
   if (i < la || j < lb) edits++;
   return edits <= 1;
@@ -186,7 +237,11 @@ const expandTokens = (tokens: string[]) => {
 };
 
 const itemSearchText = (it: FeaturedItem) =>
-  normalize([it.title, it.team, it.kitType || it.badge, it.season].filter(Boolean).join(" "));
+  normalize(
+    [it.title, it.team, it.kitType || it.badge, it.season]
+      .filter(Boolean)
+      .join(" ")
+  );
 
 const itemTokens = (it: FeaturedItem) => new Set(tokenize(itemSearchText(it)));
 
@@ -207,11 +262,17 @@ function scoreItem(it: FeaturedItem, query: string) {
     if (tokens.has(qt)) matched = true;
     else {
       for (const tk of tokens) {
-        if (editDistance1orLess(qt, tk)) { matched = true; break; }
+        if (editDistance1orLess(qt, tk)) {
+          matched = true;
+          break;
+        }
       }
       if (!matched) {
         for (const alt of SYNONYMS[qt] || []) {
-          if (tokens.has(alt)) { matched = true; break; }
+          if (tokens.has(alt)) {
+            matched = true;
+            break;
+          }
         }
       }
     }
@@ -220,13 +281,17 @@ function scoreItem(it: FeaturedItem, query: string) {
 
   const teamTok = it.team ? normalize(it.team) : "";
   const kitTok = it.kitType ? normalize(it.kitType) : "";
-  if (teamTok && qExpanded.some((t) => teamTok.includes(t) || t.includes(teamTok))) hits += 1.25;
-  if (kitTok && qExpanded.some((t) => kitTok.includes(t) || t.includes(kitTok))) hits += 0.75;
+  if (
+    teamTok &&
+    qExpanded.some((t) => teamTok.includes(t) || t.includes(teamTok))
+  )
+    hits += 1.25;
+  if (kitTok && qExpanded.some((t) => kitTok.includes(t) || t.includes(kitTok)))
+    hits += 0.75;
 
   return hits;
 }
 
-// Flexible match between selected facet value and item team (aliases + fuzzy + substr)
 function teamMatches(selected: string, value?: string): boolean {
   if (!selected) return true;
   if (!value) return false;
@@ -247,6 +312,7 @@ function teamMatches(selected: string, value?: string): boolean {
 
 /* ================== Page ================== */
 export default function Shop() {
+  // NOTE: VITE_API_URL must include /api (e.g. http://localhost:4000/api)
   const api = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
   const initial = React.useMemo(() => {
@@ -256,10 +322,14 @@ export default function Shop() {
 
   // Filters
   const [q, setQ] = React.useState(initial.get("q") ?? "");
-  const [team, setTeam] = React.useState(initial.get("team") ?? initial.get("club") ?? "");
+  const [team, setTeam] = React.useState(
+    initial.get("team") ?? initial.get("club") ?? ""
+  );
   const [kitType, setKitType] = React.useState(initial.get("kitType") ?? "");
   const [season, setSeason] = React.useState(initial.get("season") ?? "");
-  const [sortParam, setSortParam] = React.useState(initial.get("sort") ?? "title:asc");
+  const [sortParam, setSortParam] = React.useState(
+    initial.get("sort") ?? "title:asc"
+  );
   const dq = useDebounced(q, 120);
 
   // UI
@@ -272,30 +342,44 @@ export default function Shop() {
 
   // Fetch
   React.useEffect(() => {
-    if (!api) { setLoading(false); setErr("VITE_API_URL is not set"); return; }
+    if (!api) {
+      setLoading(false);
+      setErr("VITE_API_URL is not set");
+      return;
+    }
     const ctrl = new AbortController();
-    (async () => {
+
+    // ensure trailing slash; use relative path so '/api' is preserved
+    const run = async () => {
       try {
-        setLoading(true); setErr(null);
-        const url = new URL("/products", api);
+        setLoading(true);
+        setErr(null);
+        const base = api.endsWith("/") ? api : api + "/";
+        const url = new URL("products", base); // <-- NO leading slash
         url.searchParams.set("page", "1");
         url.searchParams.set("limit", "9999");
         url.searchParams.set("sort", "createdAt:desc");
         const res = await fetch(url.toString(), { signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const arr: ApiProduct[] = Array.isArray(data) ? data : data?.data?.items ?? data?.items ?? [];
+        const arr: ApiProduct[] = Array.isArray(data)
+          ? data
+          : data?.data?.items ?? data?.items ?? [];
         setRaw(mapApiToItems(arr, api));
       } catch (e: any) {
         if (e?.name !== "AbortError") setErr(e?.message || "Failed to load");
         setRaw([]);
-      } finally { setLoading(false); }
-    })();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
     return () => ctrl.abort();
   }, [api]);
 
-  /* ====== robust facets (no empty selects) ====== */
-  const normFacet = (s?: string | null) => (s ?? "").toString().trim().replace(/\s+/g, " ");
+  const normFacet = (s?: string | null) =>
+    (s ?? "").toString().trim().replace(/\s+/g, " ");
 
   function toUniqueSorted(list: (string | undefined)[]) {
     const map = new Map<string, string>();
@@ -325,12 +409,11 @@ export default function Shop() {
     };
   }, [raw]);
 
-  // Filtering + relevance
   const filtered = React.useMemo(() => {
     const text = dq.trim();
     const withScores = raw
       .filter((it) => {
-        if (team && !teamMatches(team, it.team)) return false; // <— smart team matching
+        if (team && !teamMatches(team, it.team)) return false;
         if (kitType && (it.kitType || it.badge || "") !== kitType) return false;
         if (season && (it.season || "") !== season) return false;
         if (!text) return true;
@@ -343,19 +426,30 @@ export default function Shop() {
     withScores.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (field === "title") {
-        return asc ? a.it.title.localeCompare(b.it.title) : b.it.title.localeCompare(a.it.title);
+        return asc
+          ? a.it.title.localeCompare(b.it.title)
+          : b.it.title.localeCompare(a.it.title);
       }
       return 0;
     });
     return withScores.map((x) => x.it);
   }, [raw, dq, team, kitType, season, sortParam]);
 
-  // Sync URL
-  React.useEffect(() => { setSearchParam("q", q || null); }, [q]);
-  React.useEffect(() => { setSearchParam("team", team || null); }, [team]);
-  React.useEffect(() => { setSearchParam("kitType", kitType || null); }, [kitType]);
-  React.useEffect(() => { setSearchParam("season", season || null); }, [season]);
-  React.useEffect(() => { setSearchParam("sort", sortParam || null); }, [sortParam]);
+  React.useEffect(() => {
+    setSearchParam("q", q || null);
+  }, [q]);
+  React.useEffect(() => {
+    setSearchParam("team", team || null);
+  }, [team]);
+  React.useEffect(() => {
+    setSearchParam("kitType", kitType || null);
+  }, [kitType]);
+  React.useEffect(() => {
+    setSearchParam("season", season || null);
+  }, [season]);
+  React.useEffect(() => {
+    setSearchParam("sort", sortParam || null);
+  }, [sortParam]);
 
   const styles = `
   :root{
@@ -384,7 +478,6 @@ export default function Shop() {
   .shine:hover::before { transform:translateX(120%) }
   .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
 
-  /* Premium control styling */
   .pro-filters button,
   .pro-filters select,
   .pro-filters input {
@@ -414,14 +507,13 @@ export default function Shop() {
   @media (prefers-reduced-motion: reduce) { [data-anim="reveal"] { animation:none !important } .shine::before { display:none } }
 `;
 
-  /* ====== Pro Filter Rail ====== */
-  const activeCount = (team ? 1 : 0) + (kitType ? 1 : 0) + (season ? 1 : 0) + (q ? 1 : 0);
+  const activeCount =
+    (team ? 1 : 0) + (kitType ? 1 : 0) + (season ? 1 : 0) + (q ? 1 : 0);
 
   const FilterRail = (
     <div className="sticky top-0 z-30 bg-neutral-950/85 backdrop-blur border-b border-white/10">
       <div className="mx-auto w-full max-w-[100vw] px-4">
         <div className="py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {/* Filters trigger */}
           <button
             onClick={() => setOpenFilters(true)}
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06]
@@ -438,7 +530,6 @@ export default function Shop() {
             )}
           </button>
 
-          {/* Search */}
           <label className="relative flex-1 min-w-[52%]">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" />
             <input
@@ -460,11 +551,19 @@ export default function Shop() {
             )}
           </label>
 
-          {/* Inline facet selects */}
-          <InlineFacet label="Team" value={team} onChange={setTeam} options={facets.teams} />
-          <InlineFacet label="Kit" value={kitType} onChange={setKitType} options={facets.kits} />
+          <InlineFacet
+            label="Team"
+            value={team}
+            onChange={setTeam}
+            options={facets.teams}
+          />
+          <InlineFacet
+            label="Kit"
+            value={kitType}
+            onChange={setKitType}
+            options={facets.kits}
+          />
 
-          {/* Name-only sort */}
           <div className="relative hidden sm:inline-block">
             <select
               value={sortParam}
@@ -480,12 +579,17 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Active chips */}
         {activeCount > 0 && (
           <div className="pb-2 -mt-1 flex flex-wrap gap-2">
-            {team && <Chip label={`Team: ${team}`} onClear={() => setTeam("")} />}
-            {kitType && <Chip label={`Kit: ${kitType}`} onClear={() => setKitType("")} />}
-            {season && <Chip label={`Season: ${season}`} onClear={() => setSeason("")} />}
+            {team && (
+              <Chip label={`Team: ${team}`} onClear={() => setTeam("")} />
+            )}
+            {kitType && (
+              <Chip label={`Kit: ${kitType}`} onClear={() => setKitType("")} />
+            )}
+            {season && (
+              <Chip label={`Season: ${season}`} onClear={() => setSeason("")} />
+            )}
             {q && <Chip label={`Query: ${q}`} onClear={() => setQ("")} />}
           </div>
         )}
@@ -493,25 +597,52 @@ export default function Shop() {
     </div>
   );
 
-  /* ====== Mobile Bottom Sheet (Filters) ====== */
   const MobileSheet = openFilters ? (
     <div className="fixed inset-0 z-40">
-      <div className="absolute inset-0 bg-black/60" onClick={() => setOpenFilters(false)} />
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={() => setOpenFilters(false)}
+      />
       <div className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-neutral-950 border-t border-white/10 p-4">
         <div className="mx-auto max-w-[100vw] px-1">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-white/60">Filters</h2>
-            <button onClick={() => setOpenFilters(false)} className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/15">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-white/60">
+              Filters
+            </h2>
+            <button
+              onClick={() => setOpenFilters(false)}
+              className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/15"
+            >
               Done
             </button>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
-            <Facet label="Team" value={team} onChange={setTeam} options={facets.teams} placeholder="All Teams" />
-            <Facet label="Kit" value={kitType} onChange={setKitType} options={facets.kits} placeholder="All Kits" />
-            <Facet label="Season" value={season} onChange={setSeason} options={facets.seasons} placeholder="All Seasons" />
+            <Facet
+              label="Team"
+              value={team}
+              onChange={setTeam}
+              options={facets.teams}
+              placeholder="All Teams"
+            />
+            <Facet
+              label="Kit"
+              value={kitType}
+              onChange={setKitType}
+              options={facets.kits}
+              placeholder="All Kits"
+            />
+            <Facet
+              label="Season"
+              value={season}
+              onChange={setSeason}
+              options={facets.seasons}
+              placeholder="All Seasons"
+            />
             <div>
-              <div className="text-xs font-semibold tracking-wide text-white/50 mb-1.5">Sort</div>
+              <div className="text-xs font-semibold tracking-wide text-white/50 mb-1.5">
+                Sort
+              </div>
               <div className="relative">
                 <select
                   value={sortParam}
@@ -544,14 +675,24 @@ export default function Shop() {
         <div className="mx-auto w-full max-w-[100vw] px-4">
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 xl:grid-cols-4 pb-10 pt-2">
             {loading
-              ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-              : filtered.map((it, i) => <Card key={it.id} item={it} index={i} />)}
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))
+              : filtered.map((it, i) => (
+                  <Card key={it.id} item={it} index={i} />
+                ))}
           </div>
 
           {!loading && !err && filtered.length === 0 && (
-            <div className="mt-10 pb-16 text-white/70">No products match your filters.</div>
+            <div className="mt-10 pb-16 text-white/70">
+              No products match your filters.
+            </div>
           )}
-          {err && <div className="mt-10 pb-16 text-red-400">Failed to load products: {err}</div>}
+          {err && (
+            <div className="mt-10 pb-16 text-red-400">
+              Failed to load products: {err}
+            </div>
+          )}
         </div>
       </main>
     </div>
@@ -608,7 +749,9 @@ function Facet({
 }) {
   return (
     <div>
-      <div className="text-xs font-semibold tracking-wide text-white/50 mb-1.5">{label}</div>
+      <div className="text-xs font-semibold tracking-wide text-white/50 mb-1.5">
+        {label}
+      </div>
       <div className="relative">
         <select
           value={value}
@@ -632,8 +775,10 @@ function Facet({
 /* ================== Chip ================== */
 function Chip({ label, onClear }: { label: string; onClear: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[12px]
-                     shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[12px]
+                     shadow-[inset_0_1px_0_rgba(255,255,255,.06)]"
+    >
       {label}
       <button
         onClick={onClear}
@@ -688,18 +833,22 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
     }
   };
 
-  const onImgError = (idx: number) => (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const src = e.currentTarget.src;
-    let alt = src;
-    if (/\.jpg(\?.*)?$/i.test(src)) alt = src.replace(/\.jpg(\?.*)?$/i, ".png$1");
-    else if (/\.jpeg(\?.*)?$/i.test(src)) alt = src.replace(/\.jpeg(\?.*)?$/i, ".png$1");
-    else if (/\.png(\?.*)?$/i.test(src)) alt = src.replace(/\.png(\?.*)?$/i, ".jpg$1");
-    setSrcs((prev) => {
-      const next = [...prev];
-      next[idx] = alt !== src ? alt : footballTshirt;
-      return next;
-    });
-  };
+  const onImgError =
+    (idx: number) => (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const src = e.currentTarget.src;
+      let alt = src;
+      if (/\.jpg(\?.*)?$/i.test(src))
+        alt = src.replace(/\.jpg(\?.*)?$/i, ".png$1");
+      else if (/\.jpeg(\?.*)?$/i.test(src))
+        alt = src.replace(/\.jpeg(\?.*)?$/i, ".png$1");
+      else if (/\.png(\?.*)?$/i.test(src))
+        alt = src.replace(/\.png(\?.*)?$/i, ".jpg$1");
+      setSrcs((prev) => {
+        const next = [...prev];
+        next[idx] = alt !== src ? alt : footballTshirt;
+        return next;
+      });
+    };
 
   return (
     <article
@@ -707,18 +856,24 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
       data-anim="reveal"
       onMouseEnter={startCycle}
       onMouseLeave={stopCycle}
-      style={{ animation: shown ? "card-reveal .5s both" : undefined, animationDelay: `${(index % 10) * 28}ms` }}
+      style={{
+        animation: shown ? "card-reveal .5s both" : undefined,
+        animationDelay: `${(index % 10) * 28}ms`,
+      }}
       className="shine relative overflow-hidden rounded-2xl border border-white/10 card-surface
                  shadow-[0_8px_38px_rgba(0,0,0,0.45)]
                  transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_60px_rgba(0,0,0,0.55)]
-                 hover:border-white/20"
+                 hover;border-white/20"
     >
-      {/* Media */}
       <div className="relative aspect-[4/5] overflow-hidden vignette">
         <div
           ref={trackRef}
           className="absolute inset-0 flex"
-          style={{ transform: `translate3d(${-active * 100}%,0,0)`, transition: "none", willChange: "transform" }}
+          style={{
+            transform: `translate3d(${-active * 100}%,0,0)`,
+            transition: "none",
+            willChange: "transform",
+          }}
         >
           {srcs.map((src, i) => (
             <div key={i} className="relative shrink-0 w-full h-full">
@@ -741,10 +896,11 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
         )}
       </div>
 
-      {/* Content */}
       <div className="p-2.5 sm:p-3">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold leading-snug text-[0.95rem] md:text-base line-clamp-2">{item.title}</h3>
+          <h3 className="font-semibold leading-snug text-[0.95rem] md:text-base line-clamp-2">
+            {item.title}
+          </h3>
           <div className="shrink-0 rounded-lg bg-white text-black px-2 py-1 text-xs md:text-sm font-bold shadow">
             {item.price}
           </div>
@@ -755,7 +911,6 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
           <span className="truncate">{item.season ?? ""}</span>
         </div>
 
-        {/* Dots */}
         {Math.max(1, srcs.length) > 1 && (
           <div className="mt-2 flex items-center justify-center gap-1.5">
             {srcs.map((_, i) => (
@@ -768,7 +923,9 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
                 }}
                 className={
                   "h-2.5 w-2.5 rounded-full ring-1 ring-white/30 transition-all " +
-                  (i === active ? "bg-white/90 scale-110" : "bg-white/35 hover:bg-white/60")
+                  (i === active
+                    ? "bg-white/90 scale-110"
+                    : "bg-white/35 hover:bg-white/60")
                 }
               />
             ))}
@@ -779,13 +936,18 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
   );
 }
 
-/* ================== Skeleton ================== */
 function SkeletonCard() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 card-surface" aria-hidden>
+    <div
+      className="overflow-hidden rounded-2xl border border-white/10 card-surface"
+      aria-hidden
+    >
       <div
         className="relative aspect-[4/5] bg-gradient-to-r from-white/5 via-white/10 to-white/5"
-        style={{ backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }}
+        style={{
+          backgroundSize: "200% 100%",
+          animation: "shimmer 1.4s linear infinite",
+        }}
       />
       <div className="p-2.5 sm:p-3 space-y-2">
         <div className="h-3.5 w-4/5 bg-white/10 rounded" />

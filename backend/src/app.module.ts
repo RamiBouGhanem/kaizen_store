@@ -10,12 +10,12 @@ import { UploadsModule } from './uploads/uploads.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // Serve /uploads/** from <project>/uploads/**
+    // Serve disk uploads at /api/uploads/** so it matches VITE_API_URL that ends with /api
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'src', 'uploads', 'products'),
-      serveRoot: '/uploads/products',
-    })
-    ,
+      rootPath: join(process.cwd(), process.env.UPLOADS_DIR || 'uploads/products'),
+      serveRoot: '/api/uploads',
+      serveStaticOptions: { index: false, fallthrough: true, redirect: false },
+    }),
 
 
 

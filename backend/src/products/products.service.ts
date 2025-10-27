@@ -25,7 +25,6 @@ export class ProductsService {
     return doc.toObject();
   }
 
-  // FIX: add a bulk creator used by controller
   async createMany(dtos: CreateProductDto[]) {
     const toInsert = dtos.map((dto) => {
       const base = slugify([dto.team, dto.title, dto.kitType, dto.season]);
@@ -54,12 +53,8 @@ export class ProductsService {
     if (season) filter.season = season;
     if (typeof isFeatured !== 'undefined')
       filter.isFeatured = isFeatured === 'true' || isFeatured === true;
-    if (q) {
-      // If you have a text index, you can use $text. Otherwise use regex on title
-      filter.title = new RegExp(q, 'i');
-    }
+    if (q) filter.title = new RegExp(q, 'i');
 
-    // FIX: make a strongly-typed sort object for mongoose
     const [field, dir] = String(sort).split(':');
     const sortObj: Record<string, SortOrder> =
       field && (dir === 'asc' || dir === 'desc')
@@ -69,19 +64,13 @@ export class ProductsService {
     const skip = (Number(page) - 1) * Number(limit);
 
     const [items, total] = await Promise.all([
-      this.model
-        .find(filter)
-        .sort(sortObj as any) // mongoose’s types are broad; cast to keep TS happy
-        .skip(skip)
-        .limit(Number(limit))
-        .lean(),
+      this.model.find(filter).sort(sortObj as any).skip(skip).limit(Number(limit)).lean(),
       this.model.countDocuments(filter),
     ]);
 
     return { items, total, page: Number(page), limit: Number(limit) };
   }
 
-  // FIX: this is the method the controller now calls
   async findOneBySlug(slug: string) {
     const doc = await this.model.findOne({ slug }).lean();
     if (!doc) throw new NotFoundException('Product not found');
@@ -92,7 +81,6 @@ export class ProductsService {
     const current = await this.model.findById(id);
     if (!current) throw new NotFoundException('Product not found');
 
-    // recompute slug if any identity field changed
     let nextSlug = current.slug;
     if (dto.title || dto.team || dto.season || dto.kitType) {
       const base = slugify([

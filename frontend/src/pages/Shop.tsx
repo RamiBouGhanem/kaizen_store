@@ -18,7 +18,8 @@ type ApiProduct = {
 type FeaturedItem = {
   id: string;
   title: string;
-  price: string;
+  price: string; // new price
+  oldPrice?: string; // old price
   images: string[];
   team?: string;
   kitType?: string;
@@ -26,31 +27,21 @@ type FeaturedItem = {
   badge?: string;
 };
 
-const toAbs = (apiBase: string, img?: string | null) => {
-  if (!img) return "";
-  // clean leading slashes and collapse legacy "uploads/products/" -> "uploads/"
-  let s = String(img).trim().replace(/^\.?\/*/, "");
-  s = s.replace(/^uploads\/products\//i, "uploads/");
-
-  if (/^https?:\/\//i.test(s)) return s;
-
-  try {
-    const base = apiBase.endsWith("/") ? apiBase : apiBase + "/";
-    return new URL(s, base).toString(); // -> `${VITE_API_URL}/uploads/<file>`
-  } catch {
-    return s;
-  }
-};
-
 const mapApiToItems = (list: ApiProduct[], apiBase: string): FeaturedItem[] =>
   (list ?? []).map((p) => {
-    const imgs = (Array.isArray(p.images) ? p.images : []).map((s) =>
-      toAbs(apiBase, s)
-    );
+    const imgs = (Array.isArray(p.images) ? p.images : []).map((img) => {
+      if (!img) return footballTshirt;
+      let s = img.replace(/^\.?\/*/, "");
+      s = s.replace(/^uploads\/products\//i, "uploads/");
+      if (!/\.[a-z]{3,4}$/i.test(s)) s = s + ".jpg";
+      return /^https?:\/\//i.test(s) ? s : `${apiBase}/${s}`;
+    });
+
     return {
       id: String(p._id),
       title: p.title,
-      price: typeof p.price === "number" ? `$${p.price.toFixed(2)}` : "$0.00",
+      price: typeof p.price === "number" ? `$${p.price.toFixed(2)}` : "$14.99",
+      oldPrice: "$20.00", // default old price
       images: imgs.length ? imgs : [footballTshirt],
       team: p.team,
       kitType: p.kitType,
@@ -817,38 +808,42 @@ function Chip({ label, onClear }: { label: string; onClear: () => void }) {
 
 /* ================== Card ================== */
 function Card({ item, index }: { item: FeaturedItem; index: number }) {
+  // ====== State & Refs ======
   const [active, setActive] = React.useState(0);
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   const images = item.images.length ? item.images : [footballTshirt];
   const [srcs, setSrcs] = React.useState<string[]>(images);
+  const hoverTimer = React.useRef<number | null>(null);
   const { ref, shown } = useReveal<HTMLDivElement>();
   const len = Math.max(1, srcs.length);
-  const hoverTimer = React.useRef<number | null>(null);
 
+  // ====== Effects ======
+  // Update srcs if images change
   React.useEffect(() => setSrcs(images), [images]);
 
+  // ====== Carousel Controls ======
   const slideTo = (i: number) => {
     setActive(i);
-    const t = trackRef.current;
-    if (t) {
-      t.style.transition = "transform 520ms cubic-bezier(.4,0,.2,1)";
-      t.style.transform = `translate3d(${-i * 100}%,0,0)`;
+    if (trackRef.current) {
+      trackRef.current.style.transition = "transform 520ms cubic-bezier(.4,0,.2,1)";
+      trackRef.current.style.transform = `translate3d(${-i * 100}%,0,0)`;
     }
   };
+
   const startCycle = () => {
     if (len <= 1 || hoverTimer.current) return;
     hoverTimer.current = window.setInterval(() => {
       setActive((prev) => {
         const next = (prev + 1) % len;
-        const t = trackRef.current;
-        if (t) {
-          t.style.transition = "transform 480ms cubic-bezier(.4,0,.2,1)";
-          t.style.transform = `translate3d(${-next * 100}%,0,0)`;
+        if (trackRef.current) {
+          trackRef.current.style.transition = "transform 480ms cubic-bezier(.4,0,.2,1)";
+          trackRef.current.style.transform = `translate3d(${-next * 100}%,0,0)`;
         }
         return next;
       });
     }, 1400);
   };
+
   const stopCycle = () => {
     if (hoverTimer.current) {
       window.clearInterval(hoverTimer.current);
@@ -856,23 +851,37 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
     }
   };
 
-  const onImgError =
-    (idx: number) => (e: React.SyntheticEvent<HTMLImageElement>) => {
-      const src = e.currentTarget.src;
-      let alt = src;
-      if (/\.jpg(\?.*)?$/i.test(src))
-        alt = src.replace(/\.jpg(\?.*)?$/i, ".png$1");
-      else if (/\.jpeg(\?.*)?$/i.test(src))
-        alt = src.replace(/\.jpeg(\?.*)?$/i, ".png$1");
-      else if (/\.png(\?.*)?$/i.test(src))
-        alt = src.replace(/\.png(\?.*)?$/i, ".jpg$1");
-      setSrcs((prev) => {
-        const next = [...prev];
-        next[idx] = alt !== src ? alt : footballTshirt;
-        return next;
-      });
-    };
+  // ====== Image Error Handling ======
+  const onImgError = (idx: number) => (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const src = e.currentTarget.src;
+    const extensions = [".jpg", ".jpeg", ".png", ".webp"];
+    const currentExtMatch = src.match(/\.([a-z]{3,4})($|\?)/i);
+    const currentExt = currentExtMatch ? currentExtMatch[1] : null;
 
+    setSrcs((prev) => {
+      const next = [...prev];
+      const baseSrc = src.replace(/\.[a-z]{3,4}($|\?.*)/i, "");
+
+      if (currentExt) {
+        const currentIndex = extensions.findIndex(
+          (ext) => ext.replace(".", "") === currentExt.toLowerCase()
+        );
+        const nextIndex = (currentIndex + 1) % extensions.length;
+        next[idx] = baseSrc + extensions[nextIndex];
+      } else {
+        next[idx] = src + ".jpg";
+      }
+
+      const allTried = extensions.every((ext) =>
+        prev.some((p) => p.includes(baseSrc + ext))
+      );
+      if (allTried) next[idx] = footballTshirt;
+
+      return next;
+    });
+  };
+
+  // ====== Render ======
   return (
     <article
       ref={ref}
@@ -884,19 +893,15 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
         animationDelay: `${(index % 10) * 28}ms`,
       }}
       className="shine relative overflow-hidden rounded-2xl border border-white/10 card-surface
-                 shadow-[0_8px_38px_rgba(0,0,0,0.45)]
-                 transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_60px_rgba(0,0,0,0.55)]
-                 hover;border-white/20"
+                 shadow-[0_8px_38px_rgba(0,0,0,0.45)] transition duration-300
+                 hover:-translate-y-1 hover:shadow-[0_16px_60px_rgba(0,0,0,0.55)] hover:border-white/20"
     >
+      {/* ====== Image Carousel ====== */}
       <div className="relative aspect-[4/5] overflow-hidden vignette">
         <div
           ref={trackRef}
           className="absolute inset-0 flex"
-          style={{
-            transform: `translate3d(${-active * 100}%,0,0)`,
-            transition: "none",
-            willChange: "transform",
-          }}
+          style={{ transform: `translate3d(${-active * 100}%,0,0)`, transition: "none", willChange: "transform" }}
         >
           {srcs.map((src, i) => (
             <div key={i} className="relative shrink-0 w-full h-full">
@@ -912,29 +917,39 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
           ))}
         </div>
 
+        {/* Badge / Kit Type */}
         {(item.kitType || item.badge) && (
           <span className="absolute left-2.5 top-2.5 z-20 rounded-full bg-white text-black text-[10px] font-semibold px-2 py-0.5 shadow">
-            {(item.kitType || item.badge) as string}
+            {item.kitType || item.badge}
           </span>
         )}
       </div>
 
+      {/* ====== Card Content ====== */}
       <div className="p-2.5 sm:p-3">
+        {/* Title + Price */}
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold leading-snug text-[0.95rem] md:text-base line-clamp-2">
             {item.title}
           </h3>
-          <div className="shrink-0 rounded-lg bg-white text-black px-2 py-1 text-xs md:text-sm font-bold shadow">
-            {item.price}
+
+          {/* Old/New Price */}
+          <div className="flex flex-col items-end">
+            {item.oldPrice && (
+              <span className="text-xs line-through text-white/50">{item.oldPrice}</span>
+            )}
+            <span className="text-sm font-bold">{item.price}</span>
           </div>
         </div>
 
+        {/* Team / Season */}
         <div className="mt-1.5 flex items-center justify-between text-[11px] text-white/60">
           <span className="truncate">{item.team ?? "—"}</span>
           <span className="truncate">{item.season ?? ""}</span>
         </div>
 
-        {Math.max(1, srcs.length) > 1 && (
+        {/* Image indicators */}
+        {len > 1 && (
           <div className="mt-2 flex items-center justify-center gap-1.5">
             {srcs.map((_, i) => (
               <button
@@ -961,20 +976,20 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
 
 function SkeletonCard() {
   return (
-    <div
-      className="overflow-hidden rounded-2xl border border-white/10 card-surface"
-      aria-hidden
-    >
-      <div
-        className="relative aspect-[4/5] bg-gradient-to-r from-white/5 via-white/10 to-white/5"
-        style={{
-          backgroundSize: "200% 100%",
-          animation: "shimmer 1.4s linear infinite",
-        }}
-      />
-      <div className="p-2.5 sm:p-3 space-y-2">
-        <div className="h-3.5 w-4/5 bg-white/10 rounded" />
-        <div className="h-3.5 w-1/3 bg-white/10 rounded" />
+    <div className="animate-pulse overflow-hidden rounded-2xl border border-white/10 card-surface shadow-[0_8px_38px_rgba(0,0,0,0.45)]">
+      <div className="aspect-[4/5] bg-white/5" />
+      <div className="p-2.5 sm:p-3 space-y-1.5">
+        <div className="h-4 w-3/4 bg-white/10 rounded" />
+        <div className="h-4 w-1/4 bg-white/10 rounded" />
+        <div className="flex justify-between text-[11px] text-white/20">
+          <span className="h-3 w-1/3 bg-white/10 rounded" />
+          <span className="h-3 w-1/4 bg-white/10 rounded" />
+        </div>
+        <div className="flex items-center justify-center gap-1.5 mt-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span key={i} className="h-2.5 w-2.5 rounded-full bg-white/10" />
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -8,8 +8,13 @@ export class Product {
   @Prop({ required: true, trim: true })
   title: string;
 
+  // Old price (original price)
   @Prop({ required: true, type: Number, min: 0 })
-  price: number;
+  oldPrice: number;
+
+  // New price (current/discounted price)
+  @Prop({ required: true, type: Number, min: 0 })
+  newPrice: number;
 
   // Store relative paths like: "uploads/products/brazil-kit.png"
   @Prop({ type: [String], default: [] })

@@ -1,57 +1,70 @@
 import {
-  Outlet,
-  RouterProvider,
-  createRootRoute,
-  createRoute,
-  createRouter,
+  Outlet,
+  RouterProvider,
+  createRootRoute,
+  createRoute,
+  createRouter,
 } from "@tanstack/react-router";
 
-// Route components (each page is its own component)
+// Pages
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Shop from "./pages/Shop";
+import NotFoundPage from "./pages/NotFound"; // <-- our 404
 
-// Root wrapper (kept empty so each page controls its own layout/header)
+// Root wrapper
 const RootRoute = createRootRoute({ component: () => <Outlet /> });
 
-// Child routes (one per page)
+// Child routes
 const HomeRoute = createRoute({
-  getParentRoute: () => RootRoute,
-  path: "/",
-  component: Home,
+  getParentRoute: () => RootRoute,
+  path: "/",
+  component: Home,
 });
 
 const AboutRoute = createRoute({
-  getParentRoute: () => RootRoute,
-  path: "/about",
-  component: About,
+  getParentRoute: () => RootRoute,
+  path: "/about",
+  component: About,
 });
 
 const ShopRoute = createRoute({
-  getParentRoute: () => RootRoute,
-  path: "/shop",
-  component: Shop,
-  validateSearch: (search: {
-    team?: string;
-    kitType?: string;
-    season?: string;
-    q?: string;
-    sort?: string;
-  }) => search,
+  getParentRoute: () => RootRoute,
+  path: "/shop",
+  component: Shop,
+  validateSearch: (search: {
+    team?: string;
+    kitType?: string;
+    season?: string;
+    q?: string;
+    sort?: string;
+  }) => search,
 });
 
-// Build the tree
-const routeTree = RootRoute.addChildren([HomeRoute, AboutRoute, ShopRoute]);
+// Catch-all route must be last
+const NotFoundRoute = createRoute({
+  getParentRoute: () => RootRoute,
+  path: "(.*)", // <-- catch all unmatched URLs
+  component: NotFoundPage,
+});
+
+// Build the route tree
+const routeTree = RootRoute.addChildren([
+  HomeRoute,
+  AboutRoute,
+  ShopRoute,
+  NotFoundRoute, // This must be the last entry in the array
+]);
 
 const router = createRouter({ routeTree });
 
-// Type helper for TanStack Router
+// Type helper
 declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
-  }
+  interface Register {
+    router: typeof router;
+  }
 }
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return <RouterProvider router={router} />;
 }

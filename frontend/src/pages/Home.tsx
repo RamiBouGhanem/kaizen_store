@@ -3,6 +3,8 @@ import React from "react";
 import Header from "../components/Header";
 import { ChevronRight, Circle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { FaInstagram, FaWhatsapp } from "react-icons/fa";
+
 
 // Rails you already have
 import ScrollEffects from "../components/ScrollEffects";
@@ -68,18 +70,6 @@ const BASE_SLIDES: Omit<Slide, "image">[] = [
     ctaGradient: "from-sky-300 to-indigo-400",
   },
   {
-    slug: "bayern-kit",
-    name: "FC Bayern",
-    teamValue: "FC Bayern Munich",
-    overline: "Bayern Kit",
-    headline: "RED SETS THE RHYTHM",
-    tagline: "Relentless tempo. Trophy intent.",
-    headlineGradient: "from-red-500 via-rose-500 to-rose-400",
-    chipBg: "bg-red-500/25",
-    chipText: "text-rose-100",
-    ctaGradient: "from-red-400 to-rose-500",
-  },
-  {
     slug: "real-madrid-kit",
     name: "Real Madrid",
     teamValue: "Real Madrid",
@@ -138,7 +128,7 @@ export default function Home() {
 
   const reduced =
     typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    window.matchMedia?.("(prefers-reduced-motion: reduce")?.matches;
 
   // Auto-advance
   React.useEffect(() => {
@@ -399,24 +389,56 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-12 border-t border-white/10 bg-neutral-950">
-        <div className="mx-auto max-w-7xl px-4 py-10">
-          <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-            <div>
-              <span className="text-lg font-extrabold tracking-[0.16em]">
-                KAIZEN
-              </span>
-              <p className="mt-2 text-sm text-white/70">
-                Performance essentials engineered for the full 90.
-              </p>
-            </div>
-            <p className="text-xs text-white/50">
-              © {new Date().getFullYear()} KAIZEN. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      {/* Professional responsive footer (mobile-first, accessible) */}
+
+
+<footer className="mt-12 border-t border-white/10 bg-neutral-950 text-white">
+  <div className="mx-auto max-w-7xl px-4 py-4">
+    <div className="flex flex-col items-center gap-2">
+      {/* Social icons */}
+      <div className="flex items-center gap-4">
+        <a
+          href="https://wa.me/96170439225"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="WhatsApp +96170439225"
+          className="text-[#25D366] hover:text-[#1DA851] transition-colors"
+        >
+          <FaWhatsapp size={24} />
+        </a>
+        <a
+          href="https://instagram.com/kaizenxfit_"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram @kaizenxfit_"
+          className="text-[#E1306C] hover:text-[#C13584] transition-colors"
+        >
+          <FaInstagram size={24} />
+        </a>
+
+        
+      </div>
+
+      {/* Disabled links */}
+      <div className="flex flex-wrap justify-center gap-2 text-xs text-white/70 mt-1">
+        <span className="cursor-not-allowed opacity-50">Privacy</span>
+        <span>|</span>
+        <span className="cursor-not-allowed opacity-50">Terms & Conditions</span>
+        <span>|</span>
+        <span className="cursor-not-allowed opacity-50">Feedback</span>
+      </div>
+
+      {/* Copyright */}
+      <p className="mt-1 text-xs text-white/60 text-center">
+        © {new Date().getFullYear()} KAIZEN. All rights reserved.
+      </p>
     </div>
-  );
+  </div>
+</footer>
+
+
+
+</div>
+);
+
 }

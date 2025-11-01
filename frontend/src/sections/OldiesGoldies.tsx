@@ -17,7 +17,6 @@ function findAsset(names: string[]) {
 }
 const FALLBACK_IMG = findAsset(["football-tshirt", "football_tshirt", "classic-jersey", "jersey"]);
 
-// absolute URL helper
 const toAbs = (apiBase?: string, img?: string | null) => {
   if (!img) return "";
   const s = String(img).trim().replace(/^\.?\/*/, "");
@@ -25,11 +24,17 @@ const toAbs = (apiBase?: string, img?: string | null) => {
   try { return new URL(s, apiBase).toString(); } catch { return s; }
 };
 
-type ClassicItem = { id: string | number; title: string; tag: string; src: string };
+type ClassicItem = { 
+  id: string | number; 
+  title: string; 
+  tag: string; 
+  images: string[]; 
+  price?: number; 
+  discountPrice?: number; 
+};
 
 const Styles = () => (
   <style>{`
-    /* (unchanged styles) */
     #goldies { --radius: 18px; --panelRadius: 28px; --bgA: #0b0d11; --bgB: #12151d; --bgC: #181b24; --inkHi: #fff; --inkLo: #cfd2da; --shadowSoft: 0 12px 30px rgba(0,0,0,.35); --shadowDeep: 0 10px 45px rgba(0,0,0,.5); }
     .og-bg { position: absolute; inset: 0; z-index: -1; background: radial-gradient(140% 120% at 60% -10%, var(--bgA) 0%, var(--bgA) 30%, var(--bgB) 60%, var(--bgC) 100%); }
     .tunnel { position: relative; border-radius: var(--panelRadius); background: linear-gradient(180deg,#0c0e12,var(--bgA)); box-shadow: inset 0 0 60px rgba(0,0,0,.65); overflow: hidden; transform: translateY(10px); transition: transform 0.8s cubic-bezier(.22,.61,.36,1), opacity 0.8s ease; opacity: .96; }
@@ -50,6 +55,9 @@ const Styles = () => (
     .hide-scrollbar::-webkit-scrollbar { display:none; }
     .hscroll { position: relative; display: flex; gap: 1.5rem; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 1.5rem; touch-action: pan-x; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; cursor: grab; }
     .hscroll:active { cursor: grabbing; }
+    .og-card-inner-scroll { display: flex; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; gap: 0.25rem; height: 100%; }
+    .og-card-inner-scroll img { flex: 0 0 100%; scroll-snap-align: start; object-fit: cover; width: 100%; height: 100%; }
+    .og-card-inner-scroll::-webkit-scrollbar { display:none; }
     .edge-fade { position: relative; pointer-events: none; }
     .edge-fade > .hscroll { pointer-events: auto; }
     .edge-fade:before, .edge-fade:after { content:""; position:absolute; top:0; bottom:0; width:48px; z-index:50; pointer-events:none; transition: opacity .3s ease; }
@@ -76,88 +84,70 @@ function useSectionActive(id: string) {
 }
 
 function useArrowScroll(ref: React.RefObject<HTMLDivElement | null>, step = 0.5) {
-  function animateScroll(el: HTMLDivElement, target: number, ms = 380) {
-    const start = el.scrollLeft, dist = target - start, t0 = performance.now();
-    const ease = (t: number) => 1 - Math.pow(1 - t, 3);
-    const frame = (now: number) => {
-      const p = Math.min(1, (now - t0) / ms);
-      el.scrollLeft = start + dist * ease(p);
-      if (p < 1) requestAnimationFrame(frame);
-    };
-    requestAnimationFrame(frame);
-  }
   return (dir: "left" | "right") => {
     const el = ref.current;
     if (!el) return;
     const delta = el.clientWidth * step * (dir === "right" ? 1 : -1);
-    const target = Math.max(0, Math.min(el.scrollLeft + delta, el.scrollWidth - el.clientWidth));
-    try { el.scrollTo({ left: target, behavior: "smooth" }); } catch { animateScroll(el, target); }
+    el.scrollTo({ left: el.scrollLeft + delta, behavior: "smooth" });
   };
 }
 
 export default function OldiesGoldies() {
-  const api = import.meta.env.VITE_API_URL as string | undefined;
-  const [items, setItems] = useState<ClassicItem[]>(
-    Array.from({ length: 10 }).map((_, i) => ({
-      id: i + 1,
-      title: i % 2 ? "Retro Match Jersey" : "Classic Jersey",
-      tag: i % 3 ? "Edition" : "Retro",
-      src: FALLBACK_IMG || "",
-    }))
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    const ctrl = new AbortController();
-
-    async function load() {
-      if (!api) return; // fallback stays
-      try {
-        // Heuristic for "classics": oldest first or clearance/retro
-        const url = new URL("/products", api);
-        url.searchParams.set("limit", "12");
-        url.searchParams.set("sort", "createdAt:asc");
-        // If your backend supports tags/clearance, uncomment one:
-        // url.searchParams.set("isClearance", "true");
-        // url.searchParams.set("q", "retro");
-
-        const res = await fetch(url.toString(), { signal: ctrl.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const arr: any[] = Array.isArray(data) ? data : data?.data?.items ?? data?.items ?? [];
-        if (!arr.length) return;
-
-        const mapped: ClassicItem[] = arr.slice(0, 10).map((p, i) => {
-          const first = Array.isArray(p.images) && p.images[0] ? toAbs(api, p.images[0]) : "";
-          return {
-            id: String(p._id ?? p.id ?? i),
-            title: String(p.title ?? "Classic Jersey"),
-            tag: String(p.kitType ?? "Retro"),
-            src: first || (FALLBACK_IMG || ""),
-          };
-        });
-
-        if (!cancelled) setItems(mapped);
-      } catch {
-        // keep fallback
-      }
-    }
-    load();
-
-    return () => {
-      cancelled = true;
-      ctrl.abort();
-    };
-  }, [api]);
+  const [items, setItems] = useState<ClassicItem[]>([
+    {
+      id: 1,
+      title: "Barcelona Retro",
+      tag: "Retro",
+      images: [
+        "/oldiesgoldies-uploads/barca-retro/barca-retro1.png",
+        "/oldiesgoldies-uploads/barca-retro/barca-retro2.png"
+      ],
+      price: 20,
+      discountPrice: 14.99
+    },
+    {
+      id: 2,
+      title: "Brazil Home 2004",
+      tag: "Classic",
+      images: [
+        "/oldiesgoldies-uploads/brazilhome2004/brazilhome20041.png",
+        "/oldiesgoldies-uploads/brazilhome2004/brazilhome20042.png"
+      ],
+      price: 20,
+      discountPrice: 14.99
+    },
+    {
+      id: 3,
+      title: "Portugal Home 2002 Retro",
+      tag: "Retro",
+      images: [
+        "/oldiesgoldies-uploads/portugalhome2002retro/portugalhome2002retro1.png",
+        "/oldiesgoldies-uploads/portugalhome2002retro/portugalhome2002retro2.png",
+        "/oldiesgoldies-uploads/portugalhome2002retro/portugalhome2002retro3.png"
+      ],
+      price: 20,
+      discountPrice: 14.99
+    },
+    {
+      id: 4,
+      title: "Real Madrid Home 2012",
+      tag: "Classic",
+      images: [
+        "/oldiesgoldies-uploads/realmadridhome2012/realmadridhome20121.png",
+        "/oldiesgoldies-uploads/realmadridhome2012/realmadridhome20122.png",
+        "/oldiesgoldies-uploads/realmadridhome2012/realmadridhome20123.png",
+      ],
+      price: 20,
+      discountPrice: 14.99
+    },
+  ]);
 
   const active = useSectionActive("goldies");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [inView, setInView] = useState(false);
-
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [progress, setProgress] = useState(0);
-
   const scrollByArrow = useArrowScroll(scrollerRef, 0.5);
 
   useEffect(() => {
@@ -175,8 +165,7 @@ export default function OldiesGoldies() {
       const { scrollLeft, scrollWidth, clientWidth } = el;
       setAtStart(scrollLeft <= 2);
       setAtEnd(scrollLeft + clientWidth >= scrollWidth - 2);
-      const denom = Math.max(1, scrollWidth - clientWidth);
-      setProgress(Math.min(1, Math.max(0, scrollLeft / denom)));
+      setProgress(Math.min(1, Math.max(0, scrollLeft / Math.max(1, scrollWidth - clientWidth))));
     };
     update();
     el.addEventListener("scroll", update, { passive: true });
@@ -184,38 +173,6 @@ export default function OldiesGoldies() {
     return () => {
       el.removeEventListener("scroll", update as EventListener);
       window.removeEventListener("resize", update as EventListener);
-    };
-  }, []);
-
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    let isDown = false, startX = 0, startLeft = 0;
-
-    const endDrag = (pointerId?: number) => {
-      isDown = false;
-      if (pointerId !== undefined) el.releasePointerCapture?.(pointerId);
-    };
-    const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      isDown = true; startX = e.clientX; startLeft = el.scrollLeft; el.setPointerCapture?.(e.pointerId);
-    };
-    const onPointerMove = (e: PointerEvent) => { if (isDown) el.scrollLeft = startLeft - (e.clientX - startX); };
-    const onPointerUp = (e: PointerEvent) => endDrag(e.pointerId);
-    const onMouseLeave = () => endDrag();
-
-    el.addEventListener("pointerdown", onPointerDown);
-    el.addEventListener("pointermove", onPointerMove);
-    el.addEventListener("pointerup", onPointerUp);
-    el.addEventListener("pointercancel", onPointerUp);
-    el.addEventListener("mouseleave", onMouseLeave);
-
-    return () => {
-      el.removeEventListener("pointerdown", onPointerDown);
-      el.removeEventListener("pointermove", onPointerMove);
-      el.removeEventListener("pointerup", onPointerUp);
-      el.removeEventListener("pointercancel", onPointerUp);
-      el.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
@@ -242,38 +199,36 @@ export default function OldiesGoldies() {
             <div className="progress"><span style={{ width: `${Math.round(progress * 100)}%` }} /></div>
 
             <div ref={scrollerRef} className="hide-scrollbar hscroll" role="listbox" aria-label="Classic jerseys carousel">
-              {items.map((it, i) => (
+              {items.map((it) => (
                 <article
                   key={it.id}
-                  role="option"
-                  aria-selected={i === 0 ? "true" : "false"}
-                  className={[
-                    "og-card snap-start",
-                    "w-[75vw] sm:w-[55vw] md:w-[300px] lg:w-[340px]",
-                    "focus:outline-none focus:ring-2 focus:ring-white/60",
-                  ].join(" ")}
-                  tabIndex={0}
+                  className="og-card snap-start w-[75vw] sm:w-[55vw] md:w-[300px] lg:w-[340px]"
                 >
                   <div style={{ aspectRatio: "4 / 5" }} className="relative w-full">
-                    {it.src ? (
-                      <img src={it.src} alt={it.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
+                    {it.images && it.images.length > 0 ? (
+                      <div className="og-card-inner-scroll">
+                        {it.images.map((img, idx) => (
+                          <img key={idx} src={img} alt={`${it.title} ${idx + 1}`} loading="lazy" decoding="async" />
+                        ))}
+                      </div>
                     ) : (
                       <div className="absolute inset-0 grid place-items-center bg-neutral-900 text-white/60">Missing image</div>
                     )}
-                    <span className="absolute left-3 top-3 rounded-full bg-white text-black text-[10px] font-black px-2.5 py-1 shadow">
-                      {it.tag}
-                    </span>
-                    <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/70 to-transparent" />
-                    <div className="absolute inset-x-3 bottom-3 rounded-[14px] border border-white/10 bg-black/50 backdrop-blur px-3 py-2">
+
+                    <span className="absolute left-3 top-3 rounded-full bg-white text-black text-[10px] font-black px-2.5 py-1 shadow">{it.tag}</span>
+
+                    <div className="absolute inset-x-3 bottom-3 flex justify-between items-end rounded-[14px] border border-white/10 bg-black/50 backdrop-blur px-3 py-2">
                       <div className="text-sm font-extrabold leading-tight">{it.title}</div>
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="text-[11px] text-white/65">Explore</span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white text-black px-2 py-1 text-[10px] font-bold">
-                          View
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H9M17 7v8" stroke="currentColor" strokeWidth="2" /></svg>
-                        </span>
-                      </div>
+
+                      {it.price && it.discountPrice && (
+                        <div className="text-right">
+                          <span className="text-[11px] text-white/50 line-through block">${it.price}</span>
+                          <span className="text-[13px] text-white font-bold block">${it.discountPrice}</span>
+                        </div>
+                      )}
                     </div>
+
+                    <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/70 to-transparent" />
                   </div>
                 </article>
               ))}

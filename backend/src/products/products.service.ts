@@ -96,4 +96,9 @@ export class ProductsService {
     await current.save();
     return current.toObject();
   }
+
+  // NEW: Delete all products
+  async deleteAll() {
+    return this.model.deleteMany({});
+  }
 }

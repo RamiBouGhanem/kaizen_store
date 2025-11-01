@@ -543,7 +543,6 @@ async function run() {
       newPrice: 14.99,
       price: 14.99, tags: ['RealMadrid', 'RM', 'adidas', 'ThirdKit', 'Dark', 'Emirates', '2024']
     },
-   
     // 29. germany pink away 2024
     {
       title: 'Germany Away/Third Kit 2024',
@@ -562,7 +561,7 @@ async function run() {
       price: 14.99, 
       tags: ['Germany', 'DFB', 'adidas', 'AwayKit', 'Pink', 'Blue', '2024']
     },
-    // 30. Germany White Training Set 
+    // 30. Germany White Training Set
     {
       title: 'Germany Training Set 2024',
       team: 'Germany National Team',

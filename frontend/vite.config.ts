@@ -4,8 +4,8 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/', // Change from './' to '/' for Render
-  appType: 'spa',
+  base: '/', 
+  appType: 'spa', // tells Vite it’s SPA
   server: {
     proxy: {
       '/api': { target: 'http://localhost:4000', changeOrigin: true },

@@ -124,33 +124,58 @@ export default function FeaturedCollection() {
           </div>
         </div>
 
-        <div
-          ref={wrapRef}
-          className="relative overflow-x-auto overflow-y-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur slider-wrap touch-pan-y hide-scrollbar"
-          style={{ ["--card-w" as any]: "min(80vw, 360px)", ["--gap" as any]: "1rem" }}
-        >
-          <div
-            className="flex gap-4 p-4 md:p-5"
-            style={{
-              transform: `translate3d(calc(${-index} * (var(--card-w) + var(--gap))), 0, 0)`,
-              transition: "transform 520ms cubic-bezier(.22,.61,.36,1)",
-            }}
-          >
-            {items.map((item) => (
-              <Card key={item.id} item={item} />
+       <div
+  ref={wrapRef}
+  className="relative overflow-x-auto overflow-y-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur slider-wrap touch-pan-x hide-scrollbar"
+  style={{
+    scrollSnapType: "x mandatory",
+    WebkitOverflowScrolling: "touch",
+    gap: "1rem",
+  }}
+>
+  <div className="flex gap-4 p-4 md:p-5">
+    {items.map((item) => (
+      <article
+        key={item.id}
+        className="relative shrink-0 w-[80vw] sm:w-[60vw] md:w-[46vw] lg:w-[380px] rounded-2xl overflow-hidden bg-white/[0.04] border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.35)] group"
+        style={{ scrollSnapAlign: "center" }}
+      >
+        {/* Image carousel */}
+        <div className="relative h-64 md:h-80 overflow-hidden bg-black">
+          <div className="flex h-full overflow-x-auto scroll-smooth snap-x snap-mandatory touch-pan-x">
+            {item.images.map((src, i) => (
+              <div key={i} className="relative flex-shrink-0 w-full h-full snap-center">
+                <img
+                  src={src}
+                  alt={`${item.title} ${i + 1}`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="eager"
+                  decoding="async"
+                  draggable={false}
+                  onError={(e) => (e.currentTarget.style.backgroundColor = "#374151")}
+                />
+              </div>
             ))}
           </div>
+        </div>
 
-          {/* Progress bar */}
-          <div className="absolute left-0 right-0 bottom-0 p-4 md:p-5">
-            <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-white/80 transition-[width] duration-600"
-                style={{ width: progressWidth }}
-              />
-            </div>
+        {/* Title + Price */}
+        <div className="p-4 flex justify-between items-start">
+          <h3 className="font-semibold leading-tight line-clamp-2">{item.title}</h3>
+          <div className="flex flex-col items-end">
+            {item.originalPrice && (
+              <span className="text-sm text-red-400 line-through tracking-wide">
+                {item.originalPrice}
+              </span>
+            )}
+            <span className="text-l font-bold text-green-300 tracking-wide">{item.price}</span>
           </div>
         </div>
+      </article>
+    ))}
+  </div>
+</div>
+
       </div>
     </section>
   );

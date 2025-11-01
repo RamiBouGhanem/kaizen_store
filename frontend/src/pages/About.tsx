@@ -126,7 +126,7 @@ export default function About() {
               © {new Date().getFullYear()} KAIZEN. All rights reserved.
             </p>
             <a
-              href="mailto:support@kaizen.com"
+              href="kaizen.onrender.com"
               className="text-[12px] text-white/75 hover:text-white transition"
             >
               kaizen.onrender.com

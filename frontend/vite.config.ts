@@ -5,7 +5,6 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   base: './',
-  appType: 'spa', // ← ADD THIS LINE
   server: {
     proxy: {
       '/api': { target: 'http://localhost:4000', changeOrigin: true },
@@ -20,10 +19,12 @@ export default defineConfig({
       },
     },
   },
+  // Add this preview configuration
   preview: {
     port: 4173,
     strictPort: true,
   },
+  // Add this to handle SPA fallback
   optimizeDeps: {
     include: ['@tanstack/react-router'],
   },

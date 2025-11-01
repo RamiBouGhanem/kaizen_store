@@ -1,6 +1,5 @@
 // src/sections/FeaturedCollection.tsx
-import { useMemo, useRef, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
 
 type FeaturedItem = {
   id: string;
@@ -88,10 +87,9 @@ const STATIC_ITEMS: FeaturedItem[] = [
 
 export default function FeaturedCollection() {
   const [items] = useState<FeaturedItem[]>(STATIC_ITEMS);
-  const [index, setIndex] = useState(0);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-
   const [pageSize, setPageSize] = useState(1);
+  const [index] = useState(0); // keep for progress bar calculation
 
   useEffect(() => {
     const onResize = () => {
@@ -104,9 +102,6 @@ export default function FeaturedCollection() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-
-  const maxIndex = useMemo(() => Math.max(0, items.length - pageSize), [items.length, pageSize]);
-  const clamp = (n: number) => Math.min(Math.max(n, 0), maxIndex);
 
   const progressWidth =
     items.length <= pageSize
@@ -136,7 +131,10 @@ export default function FeaturedCollection() {
         >
           <div
             className="flex gap-4 p-4 md:p-5"
-            style={{ transform: `translate3d(calc(${-index} * (var(--card-w) + var(--gap))), 0, 0)`, transition: "transform 520ms cubic-bezier(.22,.61,.36,1)" }}
+            style={{
+              transform: `translate3d(calc(${-index} * (var(--card-w) + var(--gap))), 0, 0)`,
+              transition: "transform 520ms cubic-bezier(.22,.61,.36,1)",
+            }}
           >
             {items.map((item) => (
               <Card key={item.id} item={item} />
@@ -146,7 +144,10 @@ export default function FeaturedCollection() {
           {/* Progress bar */}
           <div className="absolute left-0 right-0 bottom-0 p-4 md:p-5">
             <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full rounded-full bg-white/80 transition-[width] duration-600" style={{ width: progressWidth }} />
+              <div
+                className="h-full rounded-full bg-white/80 transition-[width] duration-600"
+                style={{ width: progressWidth }}
+              />
             </div>
           </div>
         </div>
@@ -167,7 +168,8 @@ function Card({ item }: { item: FeaturedItem }) {
       try {
         await img.decode?.();
       } catch {}
-      if (!cancelled) setReady((r) => (r[i] ? r : Object.assign([...r], { [i]: true })));
+      if (!cancelled)
+        setReady((r) => (r[i] ? r : Object.assign([...r], { [i]: true })));
     });
     return () => {
       cancelled = true;
@@ -211,9 +213,7 @@ function Card({ item }: { item: FeaturedItem }) {
               {item.originalPrice}
             </span>
           )}
-          <span className="text-l font-bold text-green-300 tracking-wide">
-            {item.price}
-          </span>
+          <span className="text-l font-bold text-green-300 tracking-wide">{item.price}</span>
         </div>
       </div>
     </article>

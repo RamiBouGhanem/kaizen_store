@@ -89,7 +89,7 @@ export default function FeaturedCollection() {
   const [items] = useState<FeaturedItem[]>(STATIC_ITEMS);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [pageSize, setPageSize] = useState(1);
-  const [index, setIndex] = useState(0);
+const [index] = useState(0);
 
   // Update pageSize on resize
   useEffect(() => {

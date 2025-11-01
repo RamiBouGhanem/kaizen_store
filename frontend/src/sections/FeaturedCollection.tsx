@@ -1,17 +1,16 @@
 // src/sections/FeaturedCollection.tsx
-import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type FeaturedItem = {
   id: string;
   title: string;
-  price: string; // discounted price
-  originalPrice?: string; // original price before discount
+  price: string;
+  originalPrice?: string;
   images: string[];
   badge?: string;
 };
 
-// Static featured items with paths in public folder
 const STATIC_ITEMS: FeaturedItem[] = [
   {
     id: "1",
@@ -91,24 +90,8 @@ export default function FeaturedCollection() {
   const [items] = useState<FeaturedItem[]>(STATIC_ITEMS);
   const [index, setIndex] = useState(0);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const trackRef = useRef<HTMLDivElement | null>(null);
+
   const [pageSize, setPageSize] = useState(1);
-
-  const [isCoarsePointer, setIsCoarsePointer] = useState<boolean>(
-    () =>
-      (typeof window !== "undefined" &&
-        window.matchMedia?.("(pointer: coarse)")?.matches) ||
-      false
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(pointer: coarse)");
-    const update = () => setIsCoarsePointer(mq.matches);
-    mq.addEventListener?.("change", update);
-    update();
-    return () => mq.removeEventListener?.("change", update);
-  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -123,8 +106,7 @@ export default function FeaturedCollection() {
   }, []);
 
   const maxIndex = useMemo(() => Math.max(0, items.length - pageSize), [items.length, pageSize]);
-  const clamp = useCallback((n: number) => Math.min(Math.max(n, 0), maxIndex), [maxIndex]);
-  const to = (dir: "prev" | "next") => setIndex((i) => clamp(dir === "next" ? i + 1 : i - 1));
+  const clamp = (n: number) => Math.min(Math.max(n, 0), maxIndex);
 
   const progressWidth =
     items.length <= pageSize
@@ -153,12 +135,11 @@ export default function FeaturedCollection() {
           style={{ ["--card-w" as any]: "min(80vw, 360px)", ["--gap" as any]: "1rem" }}
         >
           <div
-            ref={trackRef}
             className="flex gap-4 p-4 md:p-5"
             style={{ transform: `translate3d(calc(${-index} * (var(--card-w) + var(--gap))), 0, 0)`, transition: "transform 520ms cubic-bezier(.22,.61,.36,1)" }}
           >
-            {items.map((item, i) => (
-              <Card key={item.id} item={item} index={i} />
+            {items.map((item) => (
+              <Card key={item.id} item={item} />
             ))}
           </div>
 
@@ -174,9 +155,8 @@ export default function FeaturedCollection() {
   );
 }
 
-function Card({ item, index }: { item: FeaturedItem; index: number }) {
+function Card({ item }: { item: FeaturedItem }) {
   const [ready, setReady] = useState<boolean[]>(item.images.map((_, i) => i === 0));
-  const trackRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,7 +177,7 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
   return (
     <article className="relative shrink-0 w-[80vw] sm:w-[60vw] md:w-[46vw] lg:w-[380px] rounded-2xl overflow-hidden bg-white/[0.04] border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.35)] group">
       <div className="relative h-64 md:h-80 overflow-hidden bg-black">
-        <div ref={trackRef} className="flex h-full overflow-x-auto scroll-smooth snap-x snap-mandatory touch-pan-x">
+        <div className="flex h-full overflow-x-auto scroll-smooth snap-x snap-mandatory touch-pan-x">
           {item.images.map((src, i) => (
             <div key={i} className="relative flex-shrink-0 w-full h-full snap-center">
               <img
@@ -223,21 +203,19 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent" />
       </div>
 
-     <div className="p-4 flex justify-between items-start">
-  <h3 className="font-semibold leading-tight line-clamp-2">{item.title}</h3>
-
-  <div className="flex flex-col items-end">
-    {item.originalPrice && (
-      <span className="text-sm text-red-400 line-through tracking-wide">
-        {item.originalPrice}
-      </span>
-    )}
-    <span className="text-l font-bold text-green-300 tracking-wide">
-      {item.price}
-    </span>
-  </div>
-</div>
-
+      <div className="p-4 flex justify-between items-start">
+        <h3 className="font-semibold leading-tight line-clamp-2">{item.title}</h3>
+        <div className="flex flex-col items-end">
+          {item.originalPrice && (
+            <span className="text-sm text-red-400 line-through tracking-wide">
+              {item.originalPrice}
+            </span>
+          )}
+          <span className="text-l font-bold text-green-300 tracking-wide">
+            {item.price}
+          </span>
+        </div>
+      </div>
     </article>
   );
 }

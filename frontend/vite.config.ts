@@ -4,7 +4,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  base: '/', // Change from './' to '/' for Render
   appType: 'spa',
   server: {
     proxy: {
@@ -23,10 +23,6 @@ export default defineConfig({
   preview: {
     port: 4173,
     strictPort: true,
-    // Add this for the preview server
-    headers: {
-      'Cache-Control': 'public, max-age=0',
-    },
   },
   optimizeDeps: {
     include: ['@tanstack/react-router'],

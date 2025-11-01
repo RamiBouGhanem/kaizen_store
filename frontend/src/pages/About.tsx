@@ -100,13 +100,13 @@ export default function About() {
                 {/* Actions: stack on mobile, inline from sm+ */}
                 <div className="mt-6 sm:mt-7 flex flex-col sm:flex-row sm:justify-center lg:justify-start gap-3">
                   <a
-                    href="/"
+                    href="/collections"
                     className="inline-flex justify-center items-center gap-2 rounded-xl bg-white text-black px-5 py-2.5 text-sm font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white/30 w-full sm:w-auto"
                   >
                     Explore Collections <ChevronRight size={16} />
                   </a>
                   <a
-                    href="/"
+                    href="/shop"
                     className="inline-flex justify-center items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 py-2.5 text-sm hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/25 w-full sm:w-auto"
                   >
                     Shop Now
@@ -126,10 +126,10 @@ export default function About() {
               © {new Date().getFullYear()} KAIZEN. All rights reserved.
             </p>
             <a
-              href="/"
+              href="mailto:support@kaizen.com"
               className="text-[12px] text-white/75 hover:text-white transition"
             >
-              kaizen.onrender.com
+              support@kaizen.com
             </a>
           </div>
         </div>

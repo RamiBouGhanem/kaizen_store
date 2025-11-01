@@ -1,29 +1,6 @@
 // src/sections/OldiesGoldies.tsx
 import React, { useEffect, useRef, useState } from "react";
 
-const assets = import.meta.glob("../assets/*.{png,jpg,jpeg,webp,avif}", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
-
-function findAsset(names: string[]) {
-  for (const n of names) {
-    const rx = new RegExp(`${n}\\.(png|jpe?g|webp|avif)$`, "i");
-    const hit = Object.entries(assets).find(([p]) => rx.test(p));
-    if (hit) return hit[1];
-  }
-  return "";
-}
-const FALLBACK_IMG = findAsset(["football-tshirt", "football_tshirt", "classic-jersey", "jersey"]);
-
-const toAbs = (apiBase?: string, img?: string | null) => {
-  if (!img) return "";
-  const s = String(img).trim().replace(/^\.?\/*/, "");
-  if (/^https?:\/\//i.test(s)) return s;
-  try { return new URL(s, apiBase).toString(); } catch { return s; }
-};
-
 type ClassicItem = { 
   id: string | number; 
   title: string; 
@@ -93,7 +70,7 @@ function useArrowScroll(ref: React.RefObject<HTMLDivElement | null>, step = 0.5)
 }
 
 export default function OldiesGoldies() {
-  const [items, setItems] = useState<ClassicItem[]>([
+  const items: ClassicItem[] = [
     {
       id: 1,
       title: "Barcelona Retro",
@@ -140,7 +117,7 @@ export default function OldiesGoldies() {
       price: 20,
       discountPrice: 14.99
     },
-  ]);
+  ];
 
   const active = useSectionActive("goldies");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -200,10 +177,7 @@ export default function OldiesGoldies() {
 
             <div ref={scrollerRef} className="hide-scrollbar hscroll" role="listbox" aria-label="Classic jerseys carousel">
               {items.map((it) => (
-                <article
-                  key={it.id}
-                  className="og-card snap-start w-[75vw] sm:w-[55vw] md:w-[300px] lg:w-[340px]"
-                >
+                <article key={it.id} className="og-card snap-start w-[75vw] sm:w-[55vw] md:w-[300px] lg:w-[340px]">
                   <div style={{ aspectRatio: "4 / 5" }} className="relative w-full">
                     {it.images && it.images.length > 0 ? (
                       <div className="og-card-inner-scroll">

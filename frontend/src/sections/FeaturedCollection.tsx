@@ -89,7 +89,9 @@ export default function FeaturedCollection() {
   const [items] = useState<FeaturedItem[]>(STATIC_ITEMS);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [pageSize, setPageSize] = useState(1);
+  const [index, setIndex] = useState(0);
 
+  // Update pageSize on resize
   useEffect(() => {
     const onResize = () => {
       const w = wrapRef.current?.clientWidth ?? 0;
@@ -101,6 +103,12 @@ export default function FeaturedCollection() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // Progress bar width
+  const progressWidth =
+    items.length <= pageSize
+      ? "100%"
+      : `${(((index + pageSize) / items.length) * 100).toFixed(2)}%`;
 
   return (
     <section
@@ -118,61 +126,96 @@ export default function FeaturedCollection() {
           </div>
         </div>
 
-        {/* Product Slider */}
+        {/* Slider container */}
         <div
           ref={wrapRef}
           className="relative overflow-x-auto overflow-y-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur slider-wrap touch-pan-x hide-scrollbar"
           style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
         >
-          <div className="flex gap-4 p-4 md:p-5">
+          <div
+            className="flex gap-4 p-4 md:p-5"
+            style={{
+              transform: `translate3d(calc(${-index} * (min(80vw, 360px) + 1rem)), 0, 0)`,
+              transition: "transform 520ms cubic-bezier(.22,.61,.36,1)",
+            }}
+          >
             {items.map((item) => (
-              <article
-                key={item.id}
-                className="relative shrink-0 w-[80vw] sm:w-[60vw] md:w-[46vw] lg:w-[380px] rounded-2xl overflow-hidden bg-white/[0.04] border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.35)] group"
-                style={{ scrollSnapAlign: "center" }}
-              >
-                {/* Image Carousel */}
-                <div className="relative h-64 md:h-80 overflow-hidden bg-black">
-                  <div className="flex h-full overflow-x-auto scroll-smooth snap-x snap-mandatory touch-pan-x">
-                    {item.images.map((src, i) => (
-                      <div key={i} className="relative flex-shrink-0 w-full h-full snap-center">
-                        <img
-                          src={src}
-                          alt={`${item.title} ${i + 1}`}
-                          className="absolute inset-0 w-full h-full object-cover"
-                          loading="eager"
-                          decoding="async"
-                          draggable={false}
-                          onError={(e) => (e.currentTarget.style.backgroundColor = "#374151")}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  {item.badge && (
-                    <span className="absolute left-3 top-3 rounded-full bg-white text-black text-[11px] font-semibold px-2 py-1 shadow">
-                      {item.badge}
-                    </span>
-                  )}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent" />
-                </div>
-
-                {/* Title + Price */}
-                <div className="p-4 flex justify-between items-start">
-                  <h3 className="font-semibold leading-tight line-clamp-2">{item.title}</h3>
-                  <div className="flex flex-col items-end">
-                    {item.originalPrice && (
-                      <span className="text-sm text-red-400 line-through tracking-wide">
-                        {item.originalPrice}
-                      </span>
-                    )}
-                    <span className="text-l font-bold text-green-300 tracking-wide">{item.price}</span>
-                  </div>
-                </div>
-              </article>
+              <Card key={item.id} item={item} />
             ))}
+          </div>
+
+          {/* Progress bar */}
+          <div className="absolute left-0 right-0 bottom-0 p-4 md:p-5">
+            <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-white/80 transition-[width] duration-600"
+                style={{ width: progressWidth }}
+              />
+            </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+// Separate Card component
+function Card({ item }: { item: FeaturedItem }) {
+  const [ready, setReady] = useState<boolean[]>(item.images.map((_, i) => i === 0));
+
+  // Preload images
+  useEffect(() => {
+    let cancelled = false;
+    item.images.forEach(async (src, i) => {
+      if (ready[i]) return;
+      const img = new Image();
+      img.src = src;
+      try {
+        await img.decode?.();
+      } catch {}
+      if (!cancelled)
+        setReady((r) => (r[i] ? r : Object.assign([...r], { [i]: true })));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.images.join("|")]);
+
+  return (
+    <article className="relative shrink-0 w-[80vw] sm:w-[60vw] md:w-[46vw] lg:w-[380px] rounded-2xl overflow-hidden bg-white/[0.04] border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.35)] group" style={{ scrollSnapAlign: "center" }}>
+      <div className="relative h-64 md:h-80 overflow-hidden bg-black">
+        <div className="flex h-full overflow-x-auto scroll-smooth snap-x snap-mandatory touch-pan-x">
+          {item.images.map((src, i) => (
+            <div key={i} className="relative flex-shrink-0 w-full h-full snap-center">
+              <img
+                src={src}
+                alt={`${item.title} ${i + 1}`}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
+                draggable={false}
+                onError={(e) => (e.currentTarget.style.backgroundColor = "#374151")}
+              />
+            </div>
+          ))}
+        </div>
+        {item.badge && (
+          <span className="absolute left-3 top-3 rounded-full bg-white text-black text-[11px] font-semibold px-2 py-1 shadow">
+            {item.badge}
+          </span>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent" />
+      </div>
+
+      <div className="p-4 flex justify-between items-start">
+        <h3 className="font-semibold leading-tight line-clamp-2">{item.title}</h3>
+        <div className="flex flex-col items-end">
+          {item.originalPrice && (
+            <span className="text-sm text-red-400 line-through tracking-wide">{item.originalPrice}</span>
+          )}
+          <span className="text-l font-bold text-green-300 tracking-wide">{item.price}</span>
+        </div>
+      </div>
+    </article>
   );
 }

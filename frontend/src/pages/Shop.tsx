@@ -2,6 +2,7 @@
 import React from "react";
 import Header from "../components/Header";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import footballTshirt from "../assets/football-tshirt.jpeg";
 import { useSearch } from "@tanstack/react-router";
 
 /* ================== Types ================== */

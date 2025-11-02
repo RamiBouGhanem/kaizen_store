@@ -9,17 +9,23 @@ import { useSearch } from "@tanstack/react-router";
 type ApiProduct = {
   _id: string;
   title: string;
-  price: number;
-  images: string[];
+  newPrice?: number | string | null; // current price
+  oldPrice?: number | string | null; // original price
+  // Remove or keep these as fallbacks if needed:
+  price?: number | string | null;
+  listPrice?: number | string | null;
+  compareAtPrice?: number | string | null;
+  images?: string[] | null;
   kitType?: string;
   team?: string;
   season?: string;
 };
+
 type FeaturedItem = {
   id: string;
   title: string;
-  price: string; // new price
-  oldPrice?: string; // old price
+  price: string; // formatted price or "—"
+  oldPrice?: string | null; // formatted old price (optional)
   images: string[];
   team?: string;
   kitType?: string;
@@ -27,6 +33,24 @@ type FeaturedItem = {
   badge?: string;
 };
 
+/* ====== Helpers ====== */
+function parseNumberLike(v?: number | string | null): number | null {
+  if (v === undefined || v === null) return null;
+  if (typeof v === "number" && !Number.isNaN(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/[^0-9.-]+/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function formatMoney(n?: number | null): string | null {
+  if (n === undefined || n === null || Number.isNaN(n)) return null;
+  // Use simple formatting to USD as before; adapt currency logic if you need multi-currency
+  return `$${n.toFixed(2)}`;
+}
+
+/* ====== Map API product -> FeaturedItem ====== */
 const mapApiToItems = (list: ApiProduct[], apiBase: string): FeaturedItem[] =>
   (list ?? []).map((p) => {
     const imgs = (Array.isArray(p.images) ? p.images : []).map((img) => {
@@ -37,11 +61,18 @@ const mapApiToItems = (list: ApiProduct[], apiBase: string): FeaturedItem[] =>
       return /^https?:\/\//i.test(s) ? s : `${apiBase}/${s}`;
     });
 
+    // Use newPrice as the current price, and oldPrice as the old price
+    const parsedPrice = parseNumberLike(p.newPrice); // Changed from p.price to p.newPrice
+    const parsedOld = parseNumberLike(p.oldPrice); // Directly use p.oldPrice
+
+    const formattedPrice = formatMoney(parsedPrice) ?? "—";
+    const formattedOld = formatMoney(parsedOld) ?? null;
+
     return {
       id: String(p._id),
       title: p.title,
-      price: typeof p.price === "number" ? `$${p.price.toFixed(2)}` : "$14.99",
-      oldPrice: "$20.00", // default old price
+      price: formattedPrice,
+      oldPrice: formattedOld ?? undefined,
       images: imgs.length ? imgs : [footballTshirt],
       team: p.team,
       kitType: p.kitType,
@@ -49,6 +80,8 @@ const mapApiToItems = (list: ApiProduct[], apiBase: string): FeaturedItem[] =>
       badge: p.kitType,
     };
   });
+
+/* ================== rest of file unchanged (copied verbatim) ================== */
 
 function useDebounced<T>(value: T, delay = 120) {
   const [v, setV] = React.useState(value);
@@ -713,6 +746,9 @@ export default function Shop() {
   );
 }
 
+/* ... InlineFacet, Facet, Chip, Card, SkeletonCard unchanged ... */
+/* (keep the rest of the original file content exactly as before) */
+
 function InlineFacet({
   label,
   value,
@@ -807,6 +843,7 @@ function Chip({ label, onClear }: { label: string; onClear: () => void }) {
 }
 
 /* ================== Card ================== */
+/* Keep Card and SkeletonCard components exactly as in your original file */
 function Card({ item, index }: { item: FeaturedItem; index: number }) {
   // ====== State & Refs ======
   const [active, setActive] = React.useState(0);
@@ -817,11 +854,8 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
   const { ref, shown } = useReveal<HTMLDivElement>();
   const len = Math.max(1, srcs.length);
 
-  // ====== Effects ======
-  // Update srcs if images change
   React.useEffect(() => setSrcs(images), [images]);
 
-  // ====== Carousel Controls ======
   const slideTo = (i: number) => {
     setActive(i);
     if (trackRef.current) {
@@ -851,7 +885,6 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
     }
   };
 
-  // ====== Image Error Handling ======
   const onImgError = (idx: number) => (e: React.SyntheticEvent<HTMLImageElement>) => {
     const src = e.currentTarget.src;
     const extensions = [".jpg", ".jpeg", ".png", ".webp"];
@@ -881,7 +914,6 @@ function Card({ item, index }: { item: FeaturedItem; index: number }) {
     });
   };
 
-  // ====== Render ======
   return (
     <article
       ref={ref}

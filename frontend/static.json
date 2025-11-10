@@ -2,6 +2,10 @@
   "root": "dist/",
   "clean_urls": false,
   "routes": {
-    "/*": "/index.html 200"
+    "/**": {
+      "Content-Type": "text/html",
+      "status": 200,
+      "rewrite": "/index.html"
+    }
   }
 }

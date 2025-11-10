@@ -337,7 +337,9 @@ function teamMatches(selected: string, value?: string): boolean {
 /* ================== Page ================== */
 export default function Shop() {
   // Router-provided search (from /shop?team=..., etc.)
-  const routeSearch = useSearch({ from: "/shop" }) as {
+  const routeSearch = useSearch({ 
+    from: "/shop" 
+  }) as {
     team?: string;
     kitType?: string;
     season?: string;

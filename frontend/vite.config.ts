@@ -5,7 +5,7 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   base: '/', 
-  appType: 'spa', // tells Vite it’s SPA
+  appType: 'spa',
   server: {
     proxy: {
       '/api': { target: 'http://localhost:4000', changeOrigin: true },

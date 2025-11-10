@@ -10,10 +10,12 @@ import {
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Shop from "./pages/Shop";
-import NotFoundPage from "./pages/NotFound"; // <-- our 404
+import NotFoundPage from "./pages/NotFound";
 
 // Root wrapper
-const RootRoute = createRootRoute({ component: () => <Outlet /> });
+const RootRoute = createRootRoute({ 
+  component: () => <Outlet />,
+});
 
 // Child routes
 const HomeRoute = createRoute({
@@ -30,7 +32,7 @@ const AboutRoute = createRoute({
 
 const ShopRoute = createRoute({
   getParentRoute: () => RootRoute,
-  path: "/shop", // keep as is
+  path: "/shop",
   component: Shop,
   validateSearch: (search: {
     team?: string;
@@ -41,10 +43,10 @@ const ShopRoute = createRoute({
   }) => search,
 });
 
-// Catch-all route must be last
-const NotFoundRoute = createRoute({
+// Catch-all route for 404 - must be last
+const CatchAllRoute = createRoute({
   getParentRoute: () => RootRoute,
-  path: "(.*)", // <-- catch all unmatched URLs
+  path: "*",
   component: NotFoundPage,
 });
 
@@ -53,17 +55,14 @@ const routeTree = RootRoute.addChildren([
   HomeRoute,
   AboutRoute,
   ShopRoute,
-  NotFoundRoute, // This must be the last entry in the array
+  CatchAllRoute, // This must be the last entry
 ]);
 
 const router = createRouter({
   routeTree,
   defaultPreload: "intent",
-  // optional if you deploy to subfolder
-  // basepath: '/',
 });
 
-// Type helper
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;

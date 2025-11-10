@@ -4,12 +4,13 @@
     <meta charset="UTF-8" />
     <title>Redirecting...</title>
     <script>
-      // Store the current path and redirect to index.html with the path as hash
+      console.log('404.html loaded - Current URL:', window.location.href);
       const path = window.location.pathname + window.location.search;
+      console.log('Path to store:', path);
+      
       if (path !== '/') {
-        // Store the original path in sessionStorage
         sessionStorage.setItem('originalPath', path);
-        // Redirect to root - the React app will handle the routing
+        console.log('Stored path in sessionStorage:', path);
         window.location.href = '/';
       }
     </script>

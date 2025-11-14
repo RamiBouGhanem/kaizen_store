@@ -558,7 +558,7 @@ async function run() {
       stock: 120,
       oldPrice: 20,
       newPrice: 14.99,
-      price: 14.99, 
+      price: 14.99,
       tags: ['Germany', 'DFB', 'adidas', 'AwayKit', 'Pink', 'Blue', '2024']
     },
     // 30. Germany White Training Set
@@ -578,9 +578,307 @@ async function run() {
       stock: 75,
       oldPrice: 25,
       newPrice: 19.99,
-      price: 19.99, 
+      price: 19.99,
       tags: ['Germany', 'DFB', 'adidas', 'TrainingSet', 'White', 'Black', '2024']
-    }
+    },
+    {
+      title: 'Manchester City - Haaland 9',
+      team: 'Manchester City',
+      season: '2024/25',
+      kitType: 'third kit',
+      description: "Manchester City Haaland 9. White base with electric blue abstract graphic pattern, Puma design, Etihad Airways sponsor, and UCL sleeve details. Replica version.",
+      images: [
+        '/uploads/products/mancity-haaland-electric/mancity-haaland-electric1',
+        '/uploads/products/mancity-haaland-electric/mancity-haaland-electric2',
+        '/uploads/products/mancity-haaland-electric/mancity-haaland-electric3',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 75,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['ManchesterCity', 'ManCity', 'Puma', 'Haaland', 'ThirdKit', 'White', 'Blue', '2024']
+    },
+
+    {
+      title: 'Lebanon Kit 2024',
+      team: 'Lebanon National Team',
+      season: '2024',
+      kitType: 'home kit',
+      description: "Lebanon Kit 2024. Clean white design with red Adidas accents, featuring the official Lebanon FA crest and classic V-neck finish. Replica version.",
+      images: [
+        '/uploads/products/lebanon-whitekit/lebanon-whitekit1',
+        '/uploads/products/lebanon-whitekit/lebanon-whitekit2',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 75,
+      oldPrice: 25,
+      newPrice: 19.99,
+      price: 19.99,
+      tags: ['Lebanon', 'LFA', 'Adidas', 'HomeKit', 'White', 'Red', '2024']
+    },
+
+    {
+      title: 'Lebanon National Team Home Jersey',
+      team: 'Lebanon National Team',
+      season: '2024/2025',
+      kitType: 'home jersey',
+      description: "Lebanon National Team Home Shirt. Classic red jersey featuring white side panels, white V-neck collar, and white Adidas stripes on the shoulders. Features the 'LEBANON' wordmark on the front and the federation crest.",
+      images: [
+        '/uploads/products/lebanon-redkit/lebanon-redkit1',
+        '/uploads/products/lebanon-redkit/lebanon-redkit2',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 50,
+      oldPrice: 25,
+      newPrice: 19.99,
+      price: 19.99,
+      tags: ['Lebanon', 'NationalTeam', 'Jersey', 'Home', 'Red', 'Adidas', '2024']
+    },
+
+    {
+      title: 'FC Barcelona Pre-Match Shirt 2023/2024',
+      team: 'FC Barcelona',
+      season: '2023/2024',
+      kitType: 'pre-match shirt',
+      description: "FC Barcelona Pre-Match Top in striking neon green with a subtle all-over pattern. Features the club crest, Nike logo, and the Spotify sponsor print in blue. Worn by the players while warming up before matches. Replica version.",
+      images: [
+        '/uploads/products/barcelona-2425third/barcelona-2425third1',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 90,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['Barcelona', 'Barça', 'Nike', 'Spotify', 'PreMatch', 'Training', 'Green', 'Neon', '2023', '2024']
+    },
+
+    {
+      title: 'FC Barcelona Special Edition Dark Jersey',
+      team: 'FC Barcelona',
+      season: '2024',
+      kitType: 'special/pre-match shirt',
+      description: "FC Barcelona Special Edition Dark Shirt. Black/Dark Navy jersey with a tonal stripe pattern. Features a large red Spotify sponsor logo, subtle blue/red trim on the sides, and a blacked-out club crest and Nike logo.",
+      images: [
+        '/uploads/products/barcelona-2425-away/barcelona-2425-away1', // Front view
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 85,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['Barcelona', 'Barça', 'Nike', 'Spotify', 'Dark', 'Black', 'SpecialEdition', '2024']
+    },
+
+    {
+      title: 'Real Madrid Third/Away Jersey 2012/2013',
+      team: 'Real Madrid CF',
+      season: '2012/2013',
+      kitType: 'third/away jersey',
+      description: "Real Madrid 2012/2013 Green Third/Away Shirt. Classic retro design with a dark green base and white and gold trim, featuring the bwin sponsor, Adidas logo, and club crest. Includes LFP badge on the sleeve. Replica version.",
+      images: [
+        '/uploads/products/realmadridaway2012/realmadridaway20121', // Front view
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 65,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['RealMadrid', 'LosBlancos', 'adidas', 'bwin', 'Green', 'Vintage', 'Retro', '2012', '2013']
+    },
+
+    {
+      title: 'Portugal National Team Home Jersey 2024 - Nani 17',
+      team: 'Portugal National Team',
+      season: '2024',
+      kitType: 'home jersey',
+      description: "Portugal 2024 Home Shirt. Deep red base with green and gold trim on the collar and cuffs. Features **Nani's number 17** print on the chest. Includes the national crest and Nike logo. Replica version.",
+      images: [
+        '/uploads/products/portugal-nani17/portugal-nani171', // Front view
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 70,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['Portugal', 'NationalTeam', 'Jersey', 'Home', 'Nike', 'Red', 'Nani', '17', '2024']
+    },
+
+    {
+      title: 'Inter Miami CF Home Jersey - Messi 10',
+      team: 'Inter Miami CF',
+      season: '2023/2024',
+      kitType: 'home jersey',
+      description: "Inter Miami CF iconic pink Home Shirt, famously worn by Lionel Messi. Features a ribbed polo collar, the XBTO sponsor logo, and the official Messi #10 print on the back. Made with AEROREADY moisture-absorbing fabric. Replica version.",
+      images: [
+        '/uploads/products/intermiamimessi10/intermiamimessi101', // Front view
+        '/uploads/products/intermiamimessi10/intermiamimessi102', // Back view (with print)
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 120,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['InterMiami', 'IMCF', 'Messi', '10', 'GOAT', 'Pink', 'MLS', 'adidas', '2023', '2024']
+    },
+
+    {
+      title: 'Brazil National Team Away Shirt - Neymar Jr. 10',
+      team: 'Brazil National Team',
+      season: '2024',
+      kitType: 'away jersey',
+      description: "Brazil National Team Away/Pre-Match Shirt in blue with striking yellow/green patterned sleeves. Features the CBF crest and a 'Neymar Jr. 10' print on the back in yellow. Replica version.",
+      images: [
+        '/uploads/products/brazil-neymar10-yellowdots/brazil-neymar10-yellowdots1', // Front view (from your other upload)
+        '/uploads/products/brazil-neymar10-yellowdots/brazil-neymar10-yellowdots2', // Back view (Neymar Jr. 10)
+        // Add more image paths here if available
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 70,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['Brazil', 'CBF', 'NationalTeam', 'Jersey', 'Away', 'Neymar', '10', 'Nike', 'Blue', '2024']
+    },
+
+    {
+      title: 'Real Madrid Training Jersey 2024/2025 - Yellow',
+      team: 'Real Madrid CF',
+      season: '2024/2025',
+      kitType: 'training jersey',
+      description: "Real Madrid Training Jersey in vibrant yellow with contrasting blue Adidas stripes on the shoulders and blue side panels. Features the club crest and the Emirates 'Fly Better' sponsor logo. Made with moisture-absorbing technology. Replica version.",
+      images: [
+        '/uploads/products/realmadridaway2425/realmadridaway24251',
+        '/uploads/products/realmadridaway2425/realmadridaway24252',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 80,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['RealMadrid', 'LosBlancos', 'adidas', 'Training', 'Yellow', 'Blue', 'Emirates', '2024']
+    },
+
+    {
+      title: 'Germany Home Jersey 2024 - Kimmich 6',
+      team: 'Germany National Team',
+      season: '2024',
+      kitType: 'home jersey',
+      description: "Germany 2024 Home Shirt. Classic white jersey with a prominent black central vertical stripe. Features gold accents on the collar and adidas logo. Customized with Kimmich #6, featuring the unique camouflage-style numbering for the tournament. Replica version.",
+      images: [
+        '/uploads/products/germany-blackwhite-kimmich6/germany-blackwhite-kimmich61', // Front view (White with Black stripe)
+        '/uploads/products/germany-blackwhite-kimmich6/germany-blackwhite-kimmich62', // Back view (Kimmich 6 camo numbers)
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 95,
+      oldPrice: 20,
+      newPrice: 14.99,
+      price: 14.99,
+      tags: ['Germany', 'DFB', 'adidas', 'Home', 'Kimmich', '6', 'White', 'Black', '2024', 'Euro2024']
+    },
+
+    {
+      title: 'Germany Home Jersey 2024 - Long Sleeve',
+      team: 'Germany National Team',
+      season: '2024',
+      kitType: 'home jersey',
+      description: "Germany 2024 Home Shirt (Long Sleeve Version). Classic white jersey with a prominent black central vertical stripe and gold accents. Ideal for cooler weather. Features the DFB crest and adidas logo. Replica version.",
+      images: [
+        '/uploads/products/germany-blackwhite-fullsleeve/germany-blackwhite-fullsleeve1',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 60,
+      oldPrice: 15,
+      newPrice: 9.99,
+      price: 9.99,
+      tags: ['Germany', 'DFB', 'adidas', 'Home', 'LongSleeve', 'White', 'Black', '2024', 'Euro2024']
+    },
+
+    {
+      title: 'FC Barcelona - White Long Sleeve',
+      team: 'FC Barcelona',
+      season: '2024/2025',
+      kitType: 'long sleeve training/pre-match shirt',
+      description: "FC Barcelona White Long Sleeve Pre-Match/Training Top. Features a light grey/white color with a subtle, textured geometric pattern. Includes the club crest, blue Spotify sponsor logo, and Nike swoosh. Ideal for training in cooler weather. Replica version.",
+      images: [
+        '/uploads/products/barcelona-grey-fullsleeve/barcelona-grey-fullsleeve1',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 70,
+      oldPrice: 15,
+      newPrice: 9.99,
+      price: 9.99,
+      tags: ['Barcelona', 'Barça', 'Nike', 'Spotify', 'Training', 'White', 'LongSleeve', '2024', '2025']
+    },
+
+    {
+      title: 'Brazil National Team - Long Sleeve',
+      team: 'Brazil National Team',
+      season: '2022',
+      kitType: 'home jersey',
+      description: "Brazil 2022 Home Shirt (Long Sleeve Version). Iconic yellow jersey featuring a subtle tonal jungle/cheetah pattern, a unique buttoned collar, and the FIFA World Cup 2022 badge. Replica version.",
+      images: [
+        '/uploads/products/brazil-fullsleeve/brazil-fullsleeve1',
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 65,
+      oldPrice: 15,
+      newPrice: 9.99,
+      price: 9.99,
+      tags: ['Brazil', 'CBF', 'NationalTeam', 'Jersey', 'Home', 'LongSleeve', 'Yellow', 'Nike', '2022', 'WorldCup']
+    },
+
+    {
+      title: 'FC Barcelona Special Edition Dark',
+      team: 'FC Barcelona',
+      season: '2024',
+      kitType: 'special/pre-match shirt',
+      description: "FC Barcelona Special Edition Dark Shirt. Black/Dark Navy jersey with a tonal stripe pattern. Features a large red Spotify sponsor logo, subtle blue/red trim on the sides, and a blacked-out club crest and Nike logo. Replica version.",
+      images: [
+        '/uploads/products/barcelona-blackpink-quarterzip/barcelona-blackpink-quarterzip1', // Front view
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 85,
+      oldPrice: 25,
+      newPrice: 19.99,
+      price: 19.99,
+      tags: ['Barcelona', 'Barça', 'Nike', 'Spotify', 'Dark', 'Black', 'SpecialEdition', '2024']
+    },
+
+    {
+      title: 'FC Barcelona Black',
+      team: 'FC Barcelona',
+      season: '2024/2025',
+      kitType: 'training top',
+      description: "FC Barcelona Black 1/4 Zip. Ideal for cold weather training, featuring a high collar, long sleeves, the classic FC Barcelona crest, and the Nike swoosh. Fleece-lined interior for warmth. Replica version.",
+      images: [
+        '/uploads/products/barcelona-black-quarterzip/barcelona-black-quarterzip1', // Front view
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 75,
+      oldPrice: 25,
+      newPrice: 19.99,
+      price: 19.99,
+      tags: ['Barcelona', 'Barça', 'Nike', 'Training', 'Top', 'Black', '1/4Zip', '2024']
+    },
+
+    {
+      title: 'Real Madrid Black 1/4 Zip 2024/2025',
+      team: 'Real Madrid CF',
+      season: '2024/2025',
+      kitType: 'training',
+      description: "Real Madrid Black 1/4 Zip Training Top. Features a black body with white three-stripe detailing on the shoulders and light gray side panels. Includes the club crest and adidas logo. Ideal for cool-weather training. Replica version.",
+      images: [
+        '/uploads/products/realmadrid-black-quarterzip/realmadrid-black-quarterzip1', // Front view
+      ],
+      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+      stock: 85,
+      oldPrice: 25,
+      newPrice: 19.99,
+      price: 19.99,
+      tags: ['RealMadrid', 'LosBlancos', 'adidas', 'Training', 'Top', 'Black', 'White', '1/4Zip', '2024']
+    },
+
   ];
 
 

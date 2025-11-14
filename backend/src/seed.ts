@@ -370,8 +370,8 @@ async function run() {
       kitType: 'away',
       description: "Adidas Manchester United Away Jersey 2024/25. Night Indigo base with subtle zig-zag 'M' monogram pattern. Sponsor Snapdragon, adidas stripes in metallic silver. Polo collar with light blue tribute to 3 rivers. Fan version: AEROREADY, 100% recycled materials.",
       images: [
-        '/uploads/products/manunitedhome24-25/manunitedaway24-251',
-        '/uploads/products/manunitedhome24-25/manunitedaway24-252',
+        '/uploads/products/manunitedhome24-25/manunitedhome24-251',
+        '/uploads/products/manunitedhome24-25/manunitedhome24-252',
       ],
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       stock: 100,
@@ -694,7 +694,7 @@ async function run() {
       kitType: 'home jersey',
       description: "Portugal 2024 Home Shirt. Deep red base with green and gold trim on the collar and cuffs. Features **Nani's number 17** print on the chest. Includes the national crest and Nike logo. Replica version.",
       images: [
-        '/uploads/products/portugal-nani17/portugal-nani171', // Front view
+        '/uploads/products/portughal-nani17/portughal-nani171', // Front view
       ],
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       stock: 70,
@@ -742,14 +742,14 @@ async function run() {
     },
 
     {
-      title: 'Real Madrid Training Jersey 2024/2025 - Yellow',
+      title: 'Real Madrid Jersey 2024/2025 - Away',
       team: 'Real Madrid CF',
       season: '2024/2025',
-      kitType: 'training jersey',
+      kitType: 'Away',
       description: "Real Madrid Training Jersey in vibrant yellow with contrasting blue Adidas stripes on the shoulders and blue side panels. Features the club crest and the Emirates 'Fly Better' sponsor logo. Made with moisture-absorbing technology. Replica version.",
       images: [
-        '/uploads/products/realmadridaway2425/realmadridaway24251',
-        '/uploads/products/realmadridaway2425/realmadridaway24252',
+        '/uploads/products/realmadridaway-2425/realmadridaway-24251',
+        '/uploads/products/realmadridaway-2425/realmadridaway-24252',
       ],
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       stock: 80,

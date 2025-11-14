@@ -711,8 +711,8 @@ async function run() {
       kitType: 'home jersey',
       description: "Inter Miami CF iconic pink Home Shirt, famously worn by Lionel Messi. Features a ribbed polo collar, the XBTO sponsor logo, and the official Messi #10 print on the back. Made with AEROREADY moisture-absorbing fabric. Replica version.",
       images: [
-        '/uploads/products/intermiamimessi10/intermiamimessi101', // Front view
-        '/uploads/products/intermiamimessi10/intermiamimessi102', // Back view (with print)
+        '/uploads/products/intermiami-messi10/intermiami-messi101', // Front view
+        '/uploads/products/intermiami-messi10/intermiami-messi102', // Back view (with print)
       ],
       sizes: ['S', 'M', 'L', 'XL', 'XXL'],
       stock: 120,
